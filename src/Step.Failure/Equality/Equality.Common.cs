@@ -8,7 +8,7 @@ partial struct ChatFlowStepFailure
         =>
         typeof(ChatFlowStepFailure);
 
-    private static StringComparer UIMessageComparer
+    private static StringComparer UserMessageComparer
         =>
         StringComparer.Ordinal;
 

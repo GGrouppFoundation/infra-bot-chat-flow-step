@@ -8,7 +8,7 @@ partial class SkipActivity
     internal static Result<string?, ChatFlowStepFailure> GetTextOrFailure(this IChatFlowStepContext context)
     {
         var activity = context.Activity;
-        if (activity.IsMessageType() is false)
+        if (activity.IsNotMessageType())
         {
             return default;
         }

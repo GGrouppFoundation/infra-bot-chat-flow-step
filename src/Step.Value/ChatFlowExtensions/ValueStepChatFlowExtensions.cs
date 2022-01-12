@@ -11,17 +11,17 @@ public static partial class ValueStepChatFlowExtensions
     private static async ValueTask<ChatFlowJump<T>> ToRepeatJumpAsync<T>(
         this IChatFlowStepContext context, ChatFlowStepFailure failure, CancellationToken token)
     {
-        var uiMessage = failure.UIMessage;
-        if (string.IsNullOrEmpty(uiMessage) is false)
+        var userMessage = failure.UserMessage;
+        if (string.IsNullOrEmpty(userMessage) is false)
         {
-            var activity = MessageFactory.Text(uiMessage);
+            var activity = MessageFactory.Text(userMessage);
             await context.SendActivityAsync(activity, token).ConfigureAwait(false);
         }
 
         var logMessage = failure.LogMessage;
         if (string.IsNullOrEmpty(logMessage) is false)
         {
-            context.Logger.LogError(logMessage);
+            context.Logger.LogError("{logMessage}", logMessage);
         }
 
         return context.RepeatSameStateJump<T>(default);
@@ -33,15 +33,18 @@ public static partial class ValueStepChatFlowExtensions
     {
         if (context.StepState is null)
         {
-            var skupButtonId = Guid.NewGuid();
+            var skipButtonId = Guid.NewGuid();
 
-            var activity = context.CreateSkipActivity(context.FlowState, skupButtonId);
+            var activity = context.CreateSkipActivity(context.FlowState, skipButtonId);
             await context.SendActivityAsync(activity, cancellationToken).ConfigureAwait(false);
 
-            return ChatFlowJump.Repeat<T>(skupButtonId);
+            return ChatFlowJump.Repeat<T>(skipButtonId);
         }
 
-        return await context.GetTextOrFailure().MapFailureValueAsync(
-            text => context.ToRepeatJumpAsync<T>(text, cancellationToken)).ConfigureAwait(false);
+        return await context.GetTextOrFailure().MapFailureValueAsync(ToRepeatJumpAsync).ConfigureAwait(false);
+
+        ValueTask<ChatFlowJump<T>> ToRepeatJumpAsync(ChatFlowStepFailure failure)
+            =>
+            context.ToRepeatJumpAsync<T>(failure, cancellationToken);
     }
 }

@@ -68,15 +68,16 @@ partial class LookupStepChatFlowExtensions
         if (searchResult.IsFailure)
         {
             var searchFailure = searchResult.FailureOrThrow();
-            if (string.IsNullOrEmpty(searchFailure.UIMessage) is false)
+            if (string.IsNullOrEmpty(searchFailure.UserMessage) is false)
             {
-                var failureActivity = MessageFactory.Text(searchFailure.UIMessage);
+                var failureActivity = MessageFactory.Text(searchFailure.UserMessage);
                 _ = await context.SendActivityAsync(failureActivity, token).ConfigureAwait(false);
             }
 
-            if (string.IsNullOrEmpty(searchFailure.LogMessage) is false)
+            var logMessage = searchFailure.LogMessage;
+            if (string.IsNullOrEmpty(logMessage) is false)
             {
-                context.Logger.LogError(searchFailure.LogMessage);
+                context.Logger.LogError("{logMessage}", logMessage);
             }
 
             return context.RepeatSameStateJump<LookupValue>(default);

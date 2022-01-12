@@ -8,6 +8,6 @@ partial struct ChatFlowStepFailure
         =>
         HashCode.Combine(
             EqualityContract,
-            UIMessageComparer.GetHashCode(UIMessage),
+            UserMessageComparer.GetHashCode(UserMessage),
             LogMessageComparer.GetHashCode(LogMessage));
 }
