@@ -28,8 +28,7 @@ public static partial class ValueStepChatFlowExtensions
     }
 
     private static async ValueTask<Result<string?, ChatFlowJump<T>>> GetTextOrRepeatJumpAsync<T>(
-        this IChatFlowContext<SkipActivityOption> context,
-        CancellationToken cancellationToken)
+        this IChatFlowContext<SkipActivityOption> context, CancellationToken cancellationToken)
     {
         if (context.StepState is null)
         {
@@ -41,7 +40,13 @@ public static partial class ValueStepChatFlowExtensions
             return ChatFlowJump.Repeat<T>(skipButtonId);
         }
 
-        return await context.GetTextOrFailure().MapFailureValueAsync(ToRepeatJumpAsync).ConfigureAwait(false);
+        return await context.GetTextOrFailure(context.FlowState).MapValueAsync(ClearMarkupAsync, ToRepeatJumpAsync).ConfigureAwait(false);
+
+        async ValueTask<string?> ClearMarkupAsync(string? text)
+        {
+            await context.RemoveTelegramKeyboardAsync(cancellationToken).ConfigureAwait(false);
+            return text;
+        }
 
         ValueTask<ChatFlowJump<T>> ToRepeatJumpAsync(ChatFlowStepFailure failure)
             =>

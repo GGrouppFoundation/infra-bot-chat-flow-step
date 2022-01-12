@@ -1,0 +1,73 @@
+﻿using System;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Bot.Builder;
+using Microsoft.Bot.Schema;
+
+namespace GGroupp.Infra.Bot.Builder;
+
+partial class AwaitDateChatFlowExtensions
+{
+    public static ChatFlow<TNext> AwaitDate<T, TNext>(
+        this ChatFlow<T> chatFlow,
+        Func<T, AwaitDateOption> optionFactory,
+        Func<T, DateOnly, TNext> mapFlowState)
+        =>
+        InnerAwaitDate(
+            chatFlow ?? throw new ArgumentNullException(nameof(chatFlow)),
+            optionFactory ?? throw new ArgumentNullException(nameof(optionFactory)),
+            mapFlowState ?? throw new ArgumentNullException(nameof(mapFlowState)));
+
+    private static ChatFlow<TNext> InnerAwaitDate<T, TNext>(
+       this ChatFlow<T> chatFlow,
+       Func<T, AwaitDateOption> optionFactory,
+       Func<T, DateOnly, TNext> mapFlowState)
+        =>
+        chatFlow.ForwardValue(optionFactory, InnerAwaitDateAsync, mapFlowState);
+
+    private static ValueTask<ChatFlowJump<DateOnly>> InnerAwaitDateAsync(
+        IChatFlowContext<AwaitDateOption> context, CancellationToken cancellationToken)
+        =>
+        context.Activity.IsCardSupported()
+        ? context.InnerAwaitDateAsync(CreateDateAdaptiveCardActivity, ParseDateFormAdaptiveCard, cancellationToken)
+        : context.InnerAwaitDateAsync(CreateMessageActivity, ParseDateFromText, cancellationToken);
+
+    private static async ValueTask<ChatFlowJump<DateOnly>> InnerAwaitDateAsync(
+        this IChatFlowContext<AwaitDateOption> context,
+        Func<IChatFlowContext<AwaitDateOption>, IActivity> activityFactory,
+        Func<IChatFlowContext<AwaitDateOption>, Result<DateOnly, Unit>> dateParser,
+        CancellationToken cancellationToken)
+    {
+        var option = context.FlowState;
+
+        if (context.StepState is null)
+        {
+            var dateActivity = activityFactory.Invoke(context);
+            await context.SendActivityAsync(dateActivity, cancellationToken).ConfigureAwait(false);
+
+            return ChatFlowJump.Repeat<DateOnly>(new());
+        }
+
+        var dateResult = await dateParser.Invoke(context).MapValueAsync(ClearMarkupAsync, SendFailureActivityAsync).ConfigureAwait(false);
+        return dateResult.Fold(NextDateJump, context.RepeatSameStateJump<DateOnly>);
+
+        async ValueTask<DateOnly> ClearMarkupAsync(DateOnly date)
+        {
+            await context.RemoveTelegramKeyboardAsync(cancellationToken).ConfigureAwait(false);
+            return date;
+        }
+
+        async ValueTask<Unit> SendFailureActivityAsync(Unit _)
+        {
+            if (string.IsNullOrEmpty(option.InvalidDateText))
+            {
+                return default;
+            }
+
+            var invalidDateActivity = MessageFactory.Text(option.InvalidDateText);
+            await context.SendActivityAsync(invalidDateActivity, cancellationToken).ConfigureAwait(false);
+
+            return default;
+        }
+    }
+}

@@ -58,6 +58,17 @@ jobs:
     - name: Pack Step.Lookup.csproj
       run: dotnet pack ./src/*/Step.Lookup.csproj --no-restore -o ~/nuget  -c Release
 
+    # Step.Date.csproj
+
+    - name: Restore Step.Date.csproj
+      run: dotnet restore ./src/*/Step.Date.csproj
+
+    - name: Build Step.Date.csproj
+      run: dotnet build ./src/*/Step.Date.csproj --no-restore  -c Release
+
+    - name: Pack Step.Date.csproj
+      run: dotnet pack ./src/*/Step.Date.csproj --no-restore -o ~/nuget  -c Release
+
     # Push
 
     - name: Push Packages
