@@ -5,27 +5,37 @@ namespace GGroupp.Infra.Bot.Builder;
 
 partial class SkipActivity
 {
-    internal static Result<string?, ChatFlowStepFailure> GetTextOrFailure(this IChatFlowStepContext context)
+    internal static Result<string?, ChatFlowStepFailure> GetTextOrFailure(this IChatFlowStepContext context, SkipActivityOption option)
     {
         var activity = context.Activity;
-        if (activity.IsMessageType() is false)
+        if (activity.IsNotMessageType())
         {
             return default;
         }
 
-        var cardActionResult = activity.GetCardActionValueOrAbsent();
-        if (cardActionResult.IsPresent)
+        if (activity.IsTelegram())
         {
-            var cardId = cardActionResult.OrThrow();
-            if (context.StepState is Guid cachedId && cardId == cachedId)
+            if (string.Equals(activity.Text, option.SkipButtonText, StringComparison.InvariantCulture))
             {
                 return null;
             }
-
-            var cardIdString = cardId.ToString("D", CultureInfo.InvariantCulture);
-            if (string.Equals(cardIdString, context.StepState?.ToString(), StringComparison.InvariantCultureIgnoreCase))
+        }
+        else
+        {
+            var cardActionResult = activity.GetCardActionValueOrAbsent();
+            if (cardActionResult.IsPresent)
             {
-                return null;
+                var cardId = cardActionResult.OrThrow();
+                if (context.StepState is Guid cachedId && cardId == cachedId)
+                {
+                    return null;
+                }
+
+                var cardIdString = cardId.ToString("D", CultureInfo.InvariantCulture);
+                if (string.Equals(cardIdString, context.StepState?.ToString(), StringComparison.InvariantCultureIgnoreCase))
+                {
+                    return null;
+                }
             }
         }
 

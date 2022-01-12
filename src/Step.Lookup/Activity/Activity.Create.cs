@@ -14,7 +14,8 @@ partial class LookupActivity
             Buttons = searchOut.Items.Select(context.Activity.CreateSearchItemAction).ToArray()
         }
         .ToAttachment()
-        .ToActivity();
+        .ToActivity(
+            inputHint: InputHints.AcceptingInput);
 
     private static CardAction CreateSearchItemAction(this Activity activity, LookupValue item)
         =>

@@ -4,21 +4,21 @@ namespace GGroupp.Infra.Bot.Builder;
 
 public readonly partial struct ChatFlowStepFailure : IEquatable<ChatFlowStepFailure>
 {
-    private readonly string? uiMessage, logMessage;
+    private readonly string? userMessage, logMessage;
 
-    public ChatFlowStepFailure(string uiMessage, string logMessage)
+    public ChatFlowStepFailure(string userMessage, string logMessage)
     {
-        this.uiMessage = string.IsNullOrEmpty(uiMessage) ? null : uiMessage;
-        this.logMessage = string.IsNullOrEmpty(logMessage) ? null : logMessage;
+        this.userMessage = string.IsNullOrEmpty(userMessage) ? default : userMessage;
+        this.logMessage = string.IsNullOrEmpty(logMessage) ? default : logMessage;
     }
 
-    public ChatFlowStepFailure(string uiMessage)
+    public ChatFlowStepFailure(string userMessage)
     {
-        this.uiMessage = string.IsNullOrEmpty(uiMessage) ? null : uiMessage;
+        this.userMessage = string.IsNullOrEmpty(userMessage) ? default : userMessage;
         logMessage = default;
     }
 
-    public string UIMessage => uiMessage ?? string.Empty;
+    public string UserMessage => userMessage ?? string.Empty;
 
     public string LogMessage => logMessage ?? string.Empty;
 }

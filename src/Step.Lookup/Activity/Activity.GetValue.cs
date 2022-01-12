@@ -8,6 +8,5 @@ partial class LookupActivity
     public static Optional<LookupValue> GetChoosenValueOrAbsent<TContext>(this TContext context)
         where TContext : IStepStateSupplier, ITurnContext
         =>
-        context.Activity.GetCardActionValueOrAbsent().FlatMap(
-            context.GetFromLookupCacheOrAbsent);
+        context.Activity.GetCardActionValueOrAbsent().FlatMap(context.GetFromLookupCacheOrAbsent);
 }

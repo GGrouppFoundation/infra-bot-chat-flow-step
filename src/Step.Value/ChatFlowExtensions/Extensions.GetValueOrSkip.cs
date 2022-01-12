@@ -44,11 +44,16 @@ partial class ValueStepChatFlowExtensions
 
         ValueTask<Result<TValue?, ChatFlowJump<TValue?>>> ParseNotNullAsync(string? text)
             =>
-            string.IsNullOrEmpty(text) ? new(default(TValue?)) : ParseAsync(text);
+            string.IsNullOrEmpty(text)
+            ? new(default(TValue?))
+            : valueParser.Invoke(text).MapValueAsync(ToNullableAsync, ToRepeatJumpAsync);
 
-        ValueTask<Result<TValue?, ChatFlowJump<TValue?>>> ParseAsync(string text)
+        static ValueTask<TValue?> ToNullableAsync(TValue value)
             =>
-            valueParser.Invoke(text).MapSuccess<TValue?>(v => v).MapFailureValueAsync(
-                ui => context.ToRepeatJumpAsync<TValue?>(ui, cancellationToken));
+            new(value);
+
+        ValueTask<ChatFlowJump<TValue?>> ToRepeatJumpAsync(ChatFlowStepFailure failure)
+            =>
+            context.ToRepeatJumpAsync<TValue?>(failure, cancellationToken);
     }
 }

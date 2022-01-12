@@ -31,9 +31,13 @@ partial class ValueStepChatFlowExtensions
         Func<string, Result<TValue, ChatFlowStepFailure>> valueParser,
         CancellationToken cancellationToken)
     {
-        var valueResult = await context.Activity.GetRequiredTextOrFailure().Forward(valueParser).MapFailureValueAsync(ToRepeatJumpAsync).ConfigureAwait(false);
+        var textResult = context.Activity.GetRequiredTextOrFailure();
+        var valueResult = await textResult.Forward(valueParser).MapFailureValueAsync(ToRepeatJumpAsync).ConfigureAwait(false);
+
         return valueResult.Fold(ChatFlowJump.Next, Pipeline.Pipe);
 
-        ValueTask<ChatFlowJump<TValue>> ToRepeatJumpAsync(ChatFlowStepFailure failure) => context.ToRepeatJumpAsync<TValue>(failure, cancellationToken);
+        ValueTask<ChatFlowJump<TValue>> ToRepeatJumpAsync(ChatFlowStepFailure failure)
+            =>
+            context.ToRepeatJumpAsync<TValue>(failure, cancellationToken);
     }
 }

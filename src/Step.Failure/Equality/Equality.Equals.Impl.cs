@@ -4,6 +4,6 @@ partial struct ChatFlowStepFailure
 {
     public bool Equals(ChatFlowStepFailure other)
         =>
-        UIMessageComparer.Equals(UIMessage, other.UIMessage) &&
+        UserMessageComparer.Equals(UserMessage, other.UserMessage) &&
         LogMessageComparer.Equals(LogMessage, other.LogMessage);
 }
