@@ -9,7 +9,7 @@ partial class ValueStepChatFlowExtensions
     public static ChatFlow<TNext> GetValueOrSkip<T, TValue, TNext>(
         this ChatFlow<T> chatFlow,
         Func<T, SkipActivityOption> optionFactory,
-        Func<string, Result<TValue, ChatFlowStepFailure>> valueParser,
+        Func<string, Result<TValue, BotFlowFailure>> valueParser,
         Func<T, TValue?, TNext> mapFlowState)
         where TValue : struct
         =>
@@ -22,7 +22,7 @@ partial class ValueStepChatFlowExtensions
     private static ChatFlow<TNext> InnerGetValueOrSkip<T, TValue, TNext>(
         ChatFlow<T> chatFlow,
         Func<T, SkipActivityOption> optionFactory,
-        Func<string, Result<TValue, ChatFlowStepFailure>> valueParser,
+        Func<string, Result<TValue, BotFlowFailure>> valueParser,
         Func<T, TValue?, TNext> mapFlowState)
         where TValue : struct
         =>
@@ -33,7 +33,7 @@ partial class ValueStepChatFlowExtensions
 
     private static async ValueTask<ChatFlowJump<TValue?>> GetValueOrRepeatAsync<TValue>(
         this IChatFlowContext<SkipActivityOption> context,
-        Func<string, Result<TValue, ChatFlowStepFailure>> valueParser,
+        Func<string, Result<TValue, BotFlowFailure>> valueParser,
         CancellationToken cancellationToken)
         where TValue : struct
     {
@@ -52,7 +52,7 @@ partial class ValueStepChatFlowExtensions
             =>
             new(value);
 
-        ValueTask<ChatFlowJump<TValue?>> ToRepeatJumpAsync(ChatFlowStepFailure failure)
+        ValueTask<ChatFlowJump<TValue?>> ToRepeatJumpAsync(BotFlowFailure failure)
             =>
             context.ToRepeatJumpAsync<TValue?>(failure, cancellationToken);
     }
