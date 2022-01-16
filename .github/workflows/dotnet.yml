@@ -25,17 +25,6 @@ jobs:
     - name: Add GGroupp NuGet Source
       run: dotnet nuget add source ${{ secrets.GGROUPP_NUGET_SOURCE_URL }} -n ggroupp -u ${{ secrets.GGROUPP_NUGET_SOURCE_USER_NAME }} -p ${{ secrets.GGROUPP_NUGET_SOURCE_USER_PASSWORD }} --store-password-in-clear-text
 
-    # Step.Failure.csproj
-
-    - name: Restore Step.Failure.csproj
-      run: dotnet restore ./src/*/Step.Failure.csproj
-
-    - name: Build Step.Failure.csproj
-      run: dotnet build ./src/*/Step.Failure.csproj --no-restore  -c Release
-
-    - name: Pack Step.Failure.csproj
-      run: dotnet pack ./src/*/Step.Failure.csproj --no-restore -o ~/nuget  -c Release
-
     # Step.Value.csproj
 
     - name: Restore Step.Value.csproj

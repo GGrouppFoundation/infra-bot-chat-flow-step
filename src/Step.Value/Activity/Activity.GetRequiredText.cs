@@ -5,7 +5,7 @@ namespace GGroupp.Infra.Bot.Builder;
 
 partial class SkipActivity
 {
-    internal static Result<string, ChatFlowStepFailure> GetRequiredTextOrFailure(this Activity activity)
+    internal static Result<string, BotFlowFailure> GetRequiredTextOrFailure(this Activity activity)
     {
         if (activity.IsMessageType() is false)
         {

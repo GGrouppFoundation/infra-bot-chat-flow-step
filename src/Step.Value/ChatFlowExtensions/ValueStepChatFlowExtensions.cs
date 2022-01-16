@@ -9,7 +9,7 @@ namespace GGroupp.Infra.Bot.Builder;
 public static partial class ValueStepChatFlowExtensions
 {
     private static async ValueTask<ChatFlowJump<T>> ToRepeatJumpAsync<T>(
-        this IChatFlowStepContext context, ChatFlowStepFailure failure, CancellationToken token)
+        this IChatFlowStepContext context, BotFlowFailure failure, CancellationToken token)
     {
         var userMessage = failure.UserMessage;
         if (string.IsNullOrEmpty(userMessage) is false)
@@ -48,7 +48,7 @@ public static partial class ValueStepChatFlowExtensions
             return text;
         }
 
-        ValueTask<ChatFlowJump<T>> ToRepeatJumpAsync(ChatFlowStepFailure failure)
+        ValueTask<ChatFlowJump<T>> ToRepeatJumpAsync(BotFlowFailure failure)
             =>
             context.ToRepeatJumpAsync<T>(failure, cancellationToken);
     }
