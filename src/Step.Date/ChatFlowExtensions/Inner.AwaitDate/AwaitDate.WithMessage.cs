@@ -24,8 +24,7 @@ partial class AwaitDateChatFlowExtensions
         return activity.SetTelegramChannelData(channelData);
     }
 
-    private static TelegramChannelData CreateTelegramChannelData(
-        DateOnly defaultDate, string dateFormat, string? placeholder)
+    private static TelegramChannelData CreateTelegramChannelData(DateOnly defaultDate, string dateFormat, string? placeholder)
         =>
         new()
         {

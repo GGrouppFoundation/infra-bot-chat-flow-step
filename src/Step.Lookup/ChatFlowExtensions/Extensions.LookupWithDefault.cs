@@ -46,28 +46,34 @@ partial class LookupStepChatFlowExtensions
             }
 
             var defaultValueSet = await defaultItemsFunc.Invoke(flowState, token).ConfigureAwait(false);
-            var defaulActivity = context.CreateLookupActivity(defaultValueSet);
-
-            _ = await context.SendActivityAsync(defaulActivity, token).ConfigureAwait(false);
-            return context.ToRepeatWithLookupCacheJump(defaultValueSet);
+            return await InnerSendLookupActivityAsync(defaultValueSet).ConfigureAwait(false);
         }
 
-        var choosenItemResult = context.GetChoosenValueOrAbsent();
-        if (choosenItemResult.IsPresent)
+        var cardActionValue = context.Activity.GetCardActionValueOrAbsent();
+        if (cardActionValue.IsPresent)
         {
-            return choosenItemResult.Map(ChatFlowJump.Next).OrThrow();
+            return cardActionValue.FlatMap(context.GetFromLookupCacheOrAbsent).Fold(ChatFlowJump.Next, context.RepeatSameStateJump<LookupValue>);
         }
 
         var searchText = context.Activity.Text;
-        if (string.IsNullOrEmpty(searchText))
+        if (context.Activity.IsNotMessageType() || string.IsNullOrEmpty(searchText))
         {
             return context.RepeatSameStateJump<LookupValue>(default);
         }
 
         var searchResult = await searchFunc.Invoke(flowState, new(searchText), token).ConfigureAwait(false);
-        if (searchResult.IsFailure)
+        return await searchResult.FoldValueAsync(InnerSendLookupActivityAsync, InnerSendFailureActivityAsync).ConfigureAwait(false);
+
+        async ValueTask<ChatFlowJump<LookupValue>> InnerSendLookupActivityAsync(LookupValueSetSeachOut lookupValueSet)
         {
-            var searchFailure = searchResult.FailureOrThrow();
+            var successActivity = context.CreateLookupActivity(lookupValueSet);
+            _ = await context.SendActivityAsync(successActivity, token).ConfigureAwait(false);
+
+            return context.ToRepeatWithLookupCacheJump(lookupValueSet);
+        }
+
+        async ValueTask<ChatFlowJump<LookupValue>> InnerSendFailureActivityAsync(BotFlowFailure searchFailure)
+        {
             if (string.IsNullOrEmpty(searchFailure.UserMessage) is false)
             {
                 var failureActivity = MessageFactory.Text(searchFailure.UserMessage);
@@ -82,12 +88,5 @@ partial class LookupStepChatFlowExtensions
 
             return context.RepeatSameStateJump<LookupValue>(default);
         }
-
-        var lookupValueSet = searchResult.SuccessOrThrow();
-
-        var successActivity = context.CreateLookupActivity(lookupValueSet);
-        _ = await context.SendActivityAsync(successActivity, token).ConfigureAwait(false);
-
-        return context.ToRepeatWithLookupCacheJump(lookupValueSet);
     }
 }

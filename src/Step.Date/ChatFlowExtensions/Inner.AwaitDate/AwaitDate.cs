@@ -48,6 +48,11 @@ partial class AwaitDateChatFlowExtensions
             return ChatFlowJump.Repeat<DateOnly>(new());
         }
 
+        if (context.Activity.IsNotTextMessageActivity())
+        {
+            return context.RepeatSameStateJump<DateOnly>();
+        }
+
         var dateResult = await dateParser.Invoke(context).MapValueAsync(ClearMarkupAsync, SendFailureActivityAsync).ConfigureAwait(false);
         return dateResult.Fold(NextDateJump, context.RepeatSameStateJump<DateOnly>);
 
