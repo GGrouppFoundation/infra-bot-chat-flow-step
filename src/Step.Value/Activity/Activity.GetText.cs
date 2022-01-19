@@ -19,6 +19,10 @@ partial class SkipActivity
             {
                 return null;
             }
+            if (activity.GetCardActionValueOrAbsent().IsPresent)
+            {
+                return default;
+            }
         }
         else
         {
@@ -36,6 +40,8 @@ partial class SkipActivity
                 {
                     return null;
                 }
+
+                return default;
             }
         }
 

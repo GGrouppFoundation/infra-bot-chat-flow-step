@@ -1,10 +1,15 @@
 using System;
 using System.Globalization;
+using Microsoft.Bot.Schema;
 
 namespace GGroupp.Infra.Bot.Builder;
 
 public static partial class AwaitDateChatFlowExtensions
 {
+    private static bool IsNotTextMessageActivity(this Activity activity)
+        =>
+        activity.IsNotMessageType() || string.IsNullOrEmpty(activity.Text) || activity.GetCardActionValueOrAbsent().IsPresent;
+
     private static Result<DateOnly, Unit> ParseDateOrFailure(string? text, string format)
         =>
         DateOnly.TryParseExact(text, format, CultureInfo.InvariantCulture, DateTimeStyles.None, out var date)
