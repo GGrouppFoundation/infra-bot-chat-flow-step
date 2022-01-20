@@ -8,12 +8,11 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <RootNamespace>GGroupp.Infra.Bot.Builder</RootNamespace>
     <AssemblyName>GGroupp.Infra.Bot.Builder.ChatFlow.Step.Lookup</AssemblyName>
-    <Version>1.2.1</Version>
+    <Version>1.2.2</Version>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="GGroupp.Infra.Bot.Builder.ActivityExtensions" Version="1.1.0" />
-    <PackageReference Include="GGroupp.Infra.Bot.Builder.ActivityExtensions.Telegram" Version="1.0.0" />
     <PackageReference Include="GGroupp.Infra.Bot.Builder.ChatFlow.Core" Version="1.2.0" />
     <PackageReference Include="GGroupp.Infra.Bot.Builder.FlowFailure" Version="1.0.0" />
     <PackageReference Include="PrimeFuncPack.Core.Result" Version="1.1.1" />
