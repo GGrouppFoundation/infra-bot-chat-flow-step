@@ -12,11 +12,34 @@ partial class AwaitDateChatFlowExtensions
 
     private const string AdaptiveCardDateFormat = "yyyy-MM-dd";
 
-    private static Result<DateOnly, Unit> ParseDateFormAdaptiveCard(IChatFlowContext<AwaitDateOption> context)
-        =>
-        context.Activity.Value is JObject jObject && jObject.HasValues
-        ? ParseDateOrFailure(jObject[DateId]?.ToString(), AdaptiveCardDateFormat)
-        : ParseDateOrFailure(context.Activity.Text, context.FlowState.DateFormat);
+    private static Result<DateOnly, BotFlowFailure> ParseDateFormAdaptiveCard(IChatFlowContext<AwaitDateOption> context)
+    {
+        var activity = context.Activity;
+
+        if (activity.IsNotMessageType())
+        {
+            return default;
+        }
+
+        if (activity.Value is JObject jObject && jObject.HasValues)
+        {
+            var dateText = jObject[DateId]?.ToString();
+
+            if (string.IsNullOrEmpty(dateText))
+            {
+                return default;
+            }
+
+            return ParseDateOrFailure(dateText, AdaptiveCardDateFormat, context.FlowState.InvalidDateText);
+        }
+
+        if (activity.GetCardActionValueOrAbsent().IsPresent)
+        {
+            return default;
+        }
+
+        return ParseDateOrFailure(activity.Text, context.FlowState.DateFormat, context.FlowState.InvalidDateText);
+    }
 
     private static IActivity CreateDateAdaptiveCardActivity(IChatFlowContext<AwaitDateOption> context)
         =>

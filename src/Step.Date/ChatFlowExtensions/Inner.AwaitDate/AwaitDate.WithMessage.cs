@@ -6,9 +6,15 @@ namespace GGroupp.Infra.Bot.Builder;
 
 partial class AwaitDateChatFlowExtensions
 {
-    private static Result<DateOnly, Unit> ParseDateFromText(IChatFlowContext<AwaitDateOption> context)
+    private static Result<DateOnly, BotFlowFailure> ParseDateFromText(IChatFlowContext<AwaitDateOption> context)
         =>
-        ParseDateOrFailure(context.Activity.Text, context.FlowState.DateFormat);
+        context.Activity.MayBeTextMessageActivity()
+        ? ParseDateOrFailure(context.Activity.Text, context.FlowState.DateFormat, context.FlowState.InvalidDateText)
+        : default;
+
+    private static bool MayBeTextMessageActivity(this Activity activity)
+        =>
+        activity.IsMessageType() && string.IsNullOrEmpty(activity.Text) is false && activity.GetCardActionValueOrAbsent().IsAbsent;
 
     private static Activity CreateMessageActivity(IChatFlowContext<AwaitDateOption> context)
     {
