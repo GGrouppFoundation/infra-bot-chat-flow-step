@@ -40,13 +40,7 @@ public static partial class ValueStepChatFlowExtensions
             return ChatFlowJump.Repeat<T>(skipButtonId);
         }
 
-        return await context.GetTextOrFailure(context.FlowState).MapValueAsync(ClearMarkupAsync, ToRepeatJumpAsync).ConfigureAwait(false);
-
-        async ValueTask<string?> ClearMarkupAsync(string? text)
-        {
-            await context.RemoveTelegramKeyboardAsync(cancellationToken).ConfigureAwait(false);
-            return text;
-        }
+        return await context.GetTextOrFailure(context.FlowState).MapFailureValueAsync(ToRepeatJumpAsync).ConfigureAwait(false);
 
         ValueTask<ChatFlowJump<T>> ToRepeatJumpAsync(BotFlowFailure failure)
             =>

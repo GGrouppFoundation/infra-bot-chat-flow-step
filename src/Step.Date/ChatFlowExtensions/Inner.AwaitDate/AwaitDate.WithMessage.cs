@@ -1,5 +1,6 @@
 ﻿using Microsoft.Bot.Builder;
 using Microsoft.Bot.Schema;
+using Newtonsoft.Json.Linq;
 using System;
 
 namespace GGroupp.Infra.Bot.Builder;
@@ -8,56 +9,49 @@ partial class AwaitDateChatFlowExtensions
 {
     private static Result<DateOnly, BotFlowFailure> ParseDateFromText(IChatFlowContext<AwaitDateOption> context)
         =>
-        context.Activity.MayBeTextMessageActivity()
+        context.MayBeTextMessageActivity()
         ? ParseDateOrFailure(context.Activity.Text, context.FlowState.DateFormat, context.FlowState.InvalidDateText)
         : default;
 
-    private static bool MayBeTextMessageActivity(this Activity activity)
+    private static bool MayBeTextMessageActivity(this ITurnContext context)
         =>
-        activity.IsMessageType() && string.IsNullOrEmpty(activity.Text) is false && activity.GetCardActionValueOrAbsent().IsAbsent;
+        context.IsMessageType() &&
+        string.IsNullOrEmpty(context.Activity.Text) is false &&
+        context.GetCardActionValueOrAbsent().IsAbsent;
 
     private static Activity CreateMessageActivity(IChatFlowContext<AwaitDateOption> context)
     {
         var option = context.FlowState;
-        var activity = MessageFactory.Text(option.Text);
+        var replyActivity = MessageFactory.Text(option.Text);
 
-        if (option.DefaultDate is null || context.Activity.IsTelegram() is false)
+        if (option.DefaultDate is null || context.IsNotTelegramChannel())
         {
-            return activity;
+            return replyActivity;
         }
 
-        var channelData = CreateTelegramChannelData(option.DefaultDate.Value, option.DateFormat, option.Text);
-        return activity.SetTelegramChannelData(channelData);
+        replyActivity.ChannelData = CreateTelegramChannelData(option.DefaultDate.Value, option.DateFormat, option.Text);
+        return replyActivity;
     }
 
-    private static TelegramChannelData CreateTelegramChannelData(DateOnly defaultDate, string dateFormat, string? placeholder)
+    private static JObject CreateTelegramChannelData(DateOnly defaultDate, string dateFormat, string? placeholder)
         =>
-        new()
-        {
-            Method = TelegramMethod.SendMessage,
-            Parameters = new()
+        new TelegramChannelData(
+            parameters: new()
             {
-                ReplyMarkup = new TelegramReplyKeyboardMarkup
-                {
-                    Keyboard = new[]
+                ReplyMarkup = new TelegramReplyKeyboardMarkup(
+                    keyboard: new[]
                     {
-                        new[]
+                        new TelegramKeyboardButton[]
                         {
-                            defaultDate.AddDays(-1).ToTelegramButton(dateFormat),
-                            defaultDate.ToTelegramButton(dateFormat)
+                            new(defaultDate.AddDays(-1).ToText(dateFormat)),
+                            new(defaultDate.ToText(dateFormat))
                         }
-                    },
+                    })
+                {
                     ResizeKeyboard = true,
                     OneTimeKeyboard = true,
                     InputFieldPlaceholder = placeholder
                 }
-            }
-        };
-
-    private static TelegramKeyboardButton ToTelegramButton(this DateOnly date, string dateFormat)
-        =>
-        new()
-        {
-            Text = date.ToText(dateFormat)
-        };
+            })
+        .ToJObject();
 }

@@ -1,8 +1,8 @@
 ﻿using System;
 using AdaptiveCards;
 using Microsoft.Bot.Builder;
-using Microsoft.Bot.Connector;
 using Microsoft.Bot.Schema;
+using Newtonsoft.Json.Linq;
 
 namespace GGroupp.Infra.Bot.Builder;
 
@@ -10,26 +10,28 @@ partial class SkipActivity
 {
     internal static IActivity CreateSkipActivity(this ITurnContext context, SkipActivityOption option, Guid skipButtonId)
     {
-        var activity = context.Activity;
-        if (activity.IsCardSupported())
+        if (context.IsCardSupported())
         {
-            return activity.InnerCreateAdaptiveCardSkipActivity(option, skipButtonId);
+            return context.InnerCreateAdaptiveCardSkipActivity(option, skipButtonId);
         }
 
-        if (activity.IsTelegram())
+        if (context.IsTelegramChannel())
         {
-            return InnerCreateTelegramSkipActivity(option);
+            var telegramActivity = MessageFactory.Text(default);
+            telegramActivity.ChannelData = InnerCreateTelegramChannelData(option);
+
+            return telegramActivity;
         }
 
-        return activity.InnerCreateHeroCardSkipActivity(option, skipButtonId);
+        return context.InnerCreateHeroCardSkipActivity(option, skipButtonId);
     }
 
-    private static IActivity InnerCreateAdaptiveCardSkipActivity(this Activity activity, SkipActivityOption option, Guid skipButtonId)
+    private static IActivity InnerCreateAdaptiveCardSkipActivity(this ITurnContext context, SkipActivityOption option, Guid skipButtonId)
         =>
         new Attachment
         {
             ContentType = AdaptiveCard.ContentType,
-            Content = new AdaptiveCard(activity.ChannelId.GetAdaptiveSchemaVersion())
+            Content = new AdaptiveCard(context.GetAdaptiveSchemaVersion())
             {
                 Body = new()
                 {
@@ -44,18 +46,18 @@ partial class SkipActivity
                     new AdaptiveSubmitAction()
                     {
                         Title = option.SkipButtonText,
-                        Data = activity.BuildCardActionValue(skipButtonId)
+                        Data = context.BuildCardActionValue(skipButtonId)
                     }
                 }
             }
         }
         .ToActivity();
 
-    private static AdaptiveSchemaVersion GetAdaptiveSchemaVersion(this string channelId)
+    private static AdaptiveSchemaVersion GetAdaptiveSchemaVersion(this ITurnContext turnContext)
         =>
-        channelId.Equals(Channels.Msteams, StringComparison.InvariantCultureIgnoreCase) ? AdaptiveCard.KnownSchemaVersion : new(1, 0);
+        turnContext.IsMsteamsChannel() ? AdaptiveCard.KnownSchemaVersion : new(1, 0);
 
-    private static IActivity InnerCreateHeroCardSkipActivity(this Activity activity, SkipActivityOption option, Guid skipButtonId)
+    private static IActivity InnerCreateHeroCardSkipActivity(this ITurnContext context, SkipActivityOption option, Guid skipButtonId)
         =>
         new HeroCard
         {
@@ -66,7 +68,7 @@ partial class SkipActivity
                 {
                     Title = option.SkipButtonText,
                     Text = option.SkipButtonText,
-                    Value = activity.BuildCardActionValue(skipButtonId)
+                    Value = context.BuildCardActionValue(skipButtonId)
                 }
             }
         }
@@ -74,31 +76,25 @@ partial class SkipActivity
         .ToActivity(
             inputHint: InputHints.AcceptingInput);
 
-    private static IActivity InnerCreateTelegramSkipActivity(SkipActivityOption option)
+    private static JObject InnerCreateTelegramChannelData(SkipActivityOption option)
         =>
-        new TelegramChannelData
-        {
-            Method = TelegramMethod.SendMessage,
-            Parameters = new()
+        new TelegramChannelData(
+            parameters: new(option.MessageText)
             {
-                ReplyMarkup = new TelegramReplyKeyboardMarkup
-                {
-                    Keyboard = new[]
+                ReplyMarkup = new TelegramReplyKeyboardMarkup(
+                    keyboard: new[]
                     {
                         new TelegramKeyboardButton[]
                         {
-                            new()
-                            {
-                                Text = option.SkipButtonText
-                            }
+                            new(option.SkipButtonText)
                         }
-                    },
+                    })
+                {
                     ResizeKeyboard = true,
                     OneTimeKeyboard = true,
                     InputFieldPlaceholder = option.MessageText
-                }
-            }
-        }
-        .ToActivity(
-            text: option.MessageText);
+                },
+                ParseMode = TelegramParseMode.Html
+            })
+        .ToJObject();
 }

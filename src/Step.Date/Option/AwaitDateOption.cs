@@ -20,9 +20,9 @@ public readonly record struct AwaitDateOption
         string? invalidDateText = null,
         DateOnly? defaultDate = null)
     {
-        this.text = string.IsNullOrEmpty(text) ? default : text;
-        this.dateFormat = string.IsNullOrEmpty(dateFormat) ? default : dateFormat;
-        this.confirmButtonText = string.IsNullOrEmpty(confirmButtonText) ? default : confirmButtonText;
+        this.text = text.OrNullIfEmpty();
+        this.dateFormat = dateFormat.OrNullIfEmpty();
+        this.confirmButtonText = confirmButtonText.OrNullIfEmpty();
         InvalidDateText = invalidDateText;
         DefaultDate = defaultDate;
     }

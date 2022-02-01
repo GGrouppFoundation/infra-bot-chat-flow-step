@@ -1,23 +1,23 @@
 ﻿using System;
-using Microsoft.Bot.Schema;
+using Microsoft.Bot.Builder;
 
 namespace GGroupp.Infra.Bot.Builder;
 
 partial class SkipActivity
 {
-    internal static Result<string, BotFlowFailure> GetRequiredTextOrFailure(this Activity activity)
+    internal static Result<string, BotFlowFailure> GetRequiredTextOrFailure(this ITurnContext context)
     {
-        if (activity.IsMessageType() is false)
+        if (context.IsMessageType() is false)
         {
             return default;
         }
 
-        var cardActionResult = activity.GetCardActionValueOrAbsent();
+        var cardActionResult = context.GetCardActionValueOrAbsent();
         if (cardActionResult.IsPresent)
         {
             return default;
         }
 
-        return activity.Text.OrEmpty();
+        return context.Activity.Text ?? string.Empty;
     }
 }
