@@ -17,7 +17,7 @@ partial class SkipActivity
 
         if (context.IsTelegramChannel())
         {
-            var telegramActivity = MessageFactory.Text(default);
+            var telegramActivity = MessageFactory.Text(context.EncodeText(option.MessageText));
             telegramActivity.ChannelData = InnerCreateTelegramChannelData(option);
 
             return telegramActivity;
@@ -79,7 +79,7 @@ partial class SkipActivity
     private static JObject InnerCreateTelegramChannelData(SkipActivityOption option)
         =>
         new TelegramChannelData(
-            parameters: new(option.MessageText)
+            parameters: new()
             {
                 ReplyMarkup = new TelegramReplyKeyboardMarkup(
                     keyboard: new[]
@@ -93,8 +93,7 @@ partial class SkipActivity
                     ResizeKeyboard = true,
                     OneTimeKeyboard = true,
                     InputFieldPlaceholder = option.MessageText
-                },
-                ParseMode = TelegramParseMode.Html
+                }
             })
         .ToJObject();
 }
