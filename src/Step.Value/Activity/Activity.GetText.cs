@@ -7,26 +7,28 @@ partial class SkipActivity
 {
     internal static Result<string?, BotFlowFailure> GetTextOrFailure(this IChatFlowStepContext context, SkipActivityOption option)
     {
-        var activity = context.Activity;
-        if (activity.IsNotMessageType())
+        if (context.IsNotMessageType())
         {
             return default;
         }
 
-        if (activity.IsTelegram())
+        var activityText = context.Activity.Text;
+
+        if (context.IsTelegramChannel())
         {
-            if (string.Equals(activity.Text, option.SkipButtonText, StringComparison.InvariantCulture))
+            if (string.Equals(activityText, option.SkipButtonText, StringComparison.InvariantCulture))
             {
                 return null;
             }
-            if (activity.GetCardActionValueOrAbsent().IsPresent)
+
+            if (context.GetCardActionValueOrAbsent().IsPresent)
             {
                 return default;
             }
         }
         else
         {
-            var cardActionResult = activity.GetCardActionValueOrAbsent();
+            var cardActionResult = context.GetCardActionValueOrAbsent();
             if (cardActionResult.IsPresent)
             {
                 var cardId = cardActionResult.OrThrow();
@@ -45,11 +47,11 @@ partial class SkipActivity
             }
         }
 
-        if (string.IsNullOrEmpty(activity.Text))
+        if (string.IsNullOrEmpty(activityText))
         {
             return default;
         }
 
-        return activity.Text;
+        return activityText;
     }
 }

@@ -49,14 +49,14 @@ partial class LookupStepChatFlowExtensions
             return await InnerSendLookupActivityAsync(defaultValueSet).ConfigureAwait(false);
         }
 
-        var cardActionValue = context.Activity.GetCardActionValueOrAbsent();
+        var cardActionValue = context.GetCardActionValueOrAbsent();
         if (cardActionValue.IsPresent)
         {
             return cardActionValue.FlatMap(context.GetFromLookupCacheOrAbsent).Fold(ChatFlowJump.Next, context.RepeatSameStateJump<LookupValue>);
         }
 
         var searchText = context.Activity.Text;
-        if (context.Activity.IsNotMessageType() || string.IsNullOrEmpty(searchText))
+        if (context.IsNotMessageType() || string.IsNullOrEmpty(searchText))
         {
             return context.RepeatSameStateJump<LookupValue>(default);
         }

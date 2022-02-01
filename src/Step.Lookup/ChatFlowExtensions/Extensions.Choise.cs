@@ -39,7 +39,7 @@ partial class LookupStepChatFlowExtensions
             return context.ToRepeatWithLookupCacheJump(choiceSet);
         }
 
-        return context.Activity.GetCardActionValueOrAbsent().FlatMap(context.GetFromLookupCacheOrAbsent).Fold(
+        return context.GetCardActionValueOrAbsent().FlatMap(context.GetFromLookupCacheOrAbsent).Fold(
             ChatFlowJump.Next,
             context.RepeatSameStateJump<LookupValue>);
     }

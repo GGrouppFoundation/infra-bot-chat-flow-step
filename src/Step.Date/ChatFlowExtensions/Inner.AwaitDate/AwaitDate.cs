@@ -29,7 +29,7 @@ partial class AwaitDateChatFlowExtensions
     private static ValueTask<ChatFlowJump<DateOnly>> InnerAwaitDateAsync(
         IChatFlowContext<AwaitDateOption> context, CancellationToken cancellationToken)
         =>
-        context.Activity.IsCardSupported()
+        context.IsCardSupported()
         ? context.InnerAwaitDateAsync(CreateDateAdaptiveCardActivity, ParseDateFormAdaptiveCard, cancellationToken)
         : context.InnerAwaitDateAsync(CreateMessageActivity, ParseDateFromText, cancellationToken);
 
@@ -49,14 +49,8 @@ partial class AwaitDateChatFlowExtensions
             return ChatFlowJump.Repeat<DateOnly>(new());
         }
 
-        var dateResult = await dateParser.Invoke(context).MapValueAsync(ClearMarkupAsync, SendFailureActivityAsync).ConfigureAwait(false);
+        var dateResult = await dateParser.Invoke(context).MapFailureValueAsync(SendFailureActivityAsync).ConfigureAwait(false);
         return dateResult.Fold(NextDateJump, context.RepeatSameStateJump<DateOnly>);
-
-        async ValueTask<DateOnly> ClearMarkupAsync(DateOnly date)
-        {
-            await context.RemoveTelegramKeyboardAsync(cancellationToken).ConfigureAwait(false);
-            return date;
-        }
 
         async ValueTask<Unit> SendFailureActivityAsync(BotFlowFailure flowFailure)
         {

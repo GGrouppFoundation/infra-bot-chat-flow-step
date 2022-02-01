@@ -1,5 +1,5 @@
 ﻿using AdaptiveCards;
-using Microsoft.Bot.Connector;
+using Microsoft.Bot.Builder;
 using Microsoft.Bot.Schema;
 using Newtonsoft.Json.Linq;
 using System;
@@ -14,14 +14,12 @@ partial class AwaitDateChatFlowExtensions
 
     private static Result<DateOnly, BotFlowFailure> ParseDateFormAdaptiveCard(IChatFlowContext<AwaitDateOption> context)
     {
-        var activity = context.Activity;
-
-        if (activity.IsNotMessageType())
+        if (context.IsNotMessageType())
         {
             return default;
         }
 
-        if (activity.Value is JObject jObject && jObject.HasValues)
+        if (context.Activity.Value is JObject jObject && jObject.HasValues)
         {
             var dateText = jObject[DateId]?.ToString();
 
@@ -33,12 +31,12 @@ partial class AwaitDateChatFlowExtensions
             return ParseDateOrFailure(dateText, AdaptiveCardDateFormat, context.FlowState.InvalidDateText);
         }
 
-        if (activity.GetCardActionValueOrAbsent().IsPresent)
+        if (context.GetCardActionValueOrAbsent().IsPresent)
         {
             return default;
         }
 
-        return ParseDateOrFailure(activity.Text, context.FlowState.DateFormat, context.FlowState.InvalidDateText);
+        return ParseDateOrFailure(context.Activity.Text, context.FlowState.DateFormat, context.FlowState.InvalidDateText);
     }
 
     private static IActivity CreateDateAdaptiveCardActivity(IChatFlowContext<AwaitDateOption> context)
@@ -46,7 +44,7 @@ partial class AwaitDateChatFlowExtensions
         new Attachment
         {
             ContentType = AdaptiveCard.ContentType,
-            Content = new AdaptiveCard(context.Activity.ChannelId.GetAdaptiveSchemaVersion())
+            Content = new AdaptiveCard(context.GetAdaptiveSchemaVersion())
             {
                 Actions = new()
                 {
@@ -73,7 +71,7 @@ partial class AwaitDateChatFlowExtensions
         }
         .ToActivity();
 
-    private static AdaptiveSchemaVersion GetAdaptiveSchemaVersion(this string channelId)
+    private static AdaptiveSchemaVersion GetAdaptiveSchemaVersion(this ITurnContext turnContext)
         =>
-        channelId.Equals(Channels.Msteams, StringComparison.InvariantCultureIgnoreCase) ? AdaptiveCard.KnownSchemaVersion : new(1, 0);
+        turnContext.IsMsteamsChannel() ? AdaptiveCard.KnownSchemaVersion : new(1, 0);
 }

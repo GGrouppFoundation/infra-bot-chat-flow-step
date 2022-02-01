@@ -11,16 +11,16 @@ partial class LookupActivity
         new HeroCard
         {
             Title = searchOut.ChoiceText,
-            Buttons = searchOut.Items.Select(context.Activity.CreateSearchItemAction).ToArray()
+            Buttons = searchOut.Items.Select(context.CreateSearchItemAction).ToArray()
         }
         .ToAttachment()
         .ToActivity();
 
-    private static CardAction CreateSearchItemAction(this Activity activity, LookupValue item)
+    private static CardAction CreateSearchItemAction(this ITurnContext context, LookupValue item)
         =>
         CreateSearchItemAction(
-            name: item.Name.ToEncodedActivityText(),
-            value: activity.BuildCardActionValue(item.Id));
+            name: context.EncodeText(item.Name),
+            value: context.BuildCardActionValue(item.Id));
 
     private static CardAction CreateSearchItemAction(string name, object value)
         =>

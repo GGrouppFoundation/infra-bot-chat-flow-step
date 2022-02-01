@@ -31,7 +31,7 @@ partial class ValueStepChatFlowExtensions
         Func<string, Result<TValue, BotFlowFailure>> valueParser,
         CancellationToken cancellationToken)
     {
-        var textResult = context.Activity.GetRequiredTextOrFailure();
+        var textResult = context.GetRequiredTextOrFailure();
         var valueResult = await textResult.Forward(valueParser).MapFailureValueAsync(ToRepeatJumpAsync).ConfigureAwait(false);
 
         return valueResult.Fold(ChatFlowJump.Next, Pipeline.Pipe);
