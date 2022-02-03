@@ -8,7 +8,7 @@ namespace GGroupp.Infra.Bot.Builder;
 
 partial class SkipActivity
 {
-    internal static IActivity CreateSkipActivity(this ITurnContext context, SkipActivityOption option, Guid skipButtonId)
+    internal static IActivity CreateSkipActivity(this ITurnContext context, SkipValueStepOption option, Guid skipButtonId)
     {
         if (context.IsCardSupported())
         {
@@ -26,7 +26,7 @@ partial class SkipActivity
         return context.InnerCreateHeroCardSkipActivity(option, skipButtonId);
     }
 
-    private static IActivity InnerCreateAdaptiveCardSkipActivity(this ITurnContext context, SkipActivityOption option, Guid skipButtonId)
+    private static IActivity InnerCreateAdaptiveCardSkipActivity(this ITurnContext context, SkipValueStepOption option, Guid skipButtonId)
         =>
         new Attachment
         {
@@ -57,7 +57,7 @@ partial class SkipActivity
         =>
         turnContext.IsMsteamsChannel() ? AdaptiveCard.KnownSchemaVersion : new(1, 0);
 
-    private static IActivity InnerCreateHeroCardSkipActivity(this ITurnContext context, SkipActivityOption option, Guid skipButtonId)
+    private static IActivity InnerCreateHeroCardSkipActivity(this ITurnContext context, SkipValueStepOption option, Guid skipButtonId)
         =>
         new HeroCard
         {
@@ -76,7 +76,7 @@ partial class SkipActivity
         .ToActivity(
             inputHint: InputHints.AcceptingInput);
 
-    private static JObject InnerCreateTelegramChannelData(SkipActivityOption option)
+    private static JObject InnerCreateTelegramChannelData(SkipValueStepOption option)
         =>
         new TelegramChannelData(
             parameters: new()

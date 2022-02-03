@@ -8,11 +8,11 @@ namespace GGroupp.Infra.Bot.Builder;
 
 partial class LookupStepChatFlowExtensions
 {
-    public static ChatFlow<TNext> AwaitLookupValue<T, TNext>(
+    public static ChatFlow<T> AwaitLookupValue<T>(
         this ChatFlow<T> chatFlow,
         LookupValueSetDefaultFunc<T> defaultItemsFunc,
         LookupValueSetSearchFunc<T> searchFunc,
-        Func<T, LookupValue, TNext> mapFlowState)
+        Func<T, LookupValue, T> mapFlowState)
         =>
         InnerAwaitLookupValue(
             chatFlow ?? throw new ArgumentNullException(nameof(chatFlow)),
@@ -20,59 +20,69 @@ partial class LookupStepChatFlowExtensions
             searchFunc ?? throw new ArgumentNullException(nameof(searchFunc)),
             mapFlowState ?? throw new ArgumentNullException(nameof(mapFlowState)));
 
-    private static ChatFlow<TNext> InnerAwaitLookupValue<T, TNext>(
+    private static ChatFlow<T> InnerAwaitLookupValue<T>(
         ChatFlow<T> chatFlow,
         LookupValueSetDefaultFunc<T> defaultItemsFunc,
         LookupValueSetSearchFunc<T> searchFunc,
-        Func<T, LookupValue, TNext> mapFlowState)
+        Func<T, LookupValue, T> mapFlowState)
         =>
         chatFlow.ForwardValue(
-            (context, token) => context.GetChoosenValueOrRepeatAsync(defaultItemsFunc, searchFunc, token),
-            mapFlowState);
+            (context, token) => context.GetChoosenValueOrRepeatAsync(defaultItemsFunc, searchFunc, mapFlowState, token));
 
-    private static async ValueTask<ChatFlowJump<LookupValue>> GetChoosenValueOrRepeatAsync<T>(
+    private static async ValueTask<ChatFlowJump<T>> GetChoosenValueOrRepeatAsync<T>(
         this IChatFlowContext<T> context,
         LookupValueSetDefaultFunc<T>? defaultItemsFunc,
         LookupValueSetSearchFunc<T> searchFunc,
+        Func<T, LookupValue, T> mapFlowState,
         CancellationToken token)
     {
-        var flowState = context.FlowState;
-
         if (context.StepState is null)
         {
             if (defaultItemsFunc is null)
             {
-                return ChatFlowJump.Repeat<LookupValue>(new());
+                return ChatFlowJump.Repeat<T>(new());
             }
 
-            var defaultValueSet = await defaultItemsFunc.Invoke(flowState, token).ConfigureAwait(false);
-            return await InnerSendLookupActivityAsync(defaultValueSet).ConfigureAwait(false);
+            var defaultOption = await defaultItemsFunc.Invoke(context, token).ConfigureAwait(false);
+            if (defaultOption.SkipStep)
+            {
+                return context.FlowState;
+            }
+
+            return await InnerSendLookupActivityAsync(defaultOption).ConfigureAwait(false);
         }
 
         var cardActionValue = context.GetCardActionValueOrAbsent();
         if (cardActionValue.IsPresent)
         {
-            return cardActionValue.FlatMap(context.GetFromLookupCacheOrAbsent).Fold(ChatFlowJump.Next, context.RepeatSameStateJump<LookupValue>);
+            return cardActionValue.FlatMap(context.GetFromLookupCacheOrAbsent).Map(MapLookupValue).Fold(
+                ChatFlowJump.Next,
+                context.RepeatSameStateJump<T>);
         }
 
         var searchText = context.Activity.Text;
         if (context.IsNotMessageType() || string.IsNullOrEmpty(searchText))
         {
-            return context.RepeatSameStateJump<LookupValue>(default);
+            return context.RepeatSameStateJump<T>(default);
         }
 
-        var searchResult = await searchFunc.Invoke(flowState, new(searchText), token).ConfigureAwait(false);
+        var searchResult = await searchFunc.Invoke(context, searchText, token).ConfigureAwait(false);
         return await searchResult.FoldValueAsync(InnerSendLookupActivityAsync, InnerSendFailureActivityAsync).ConfigureAwait(false);
 
-        async ValueTask<ChatFlowJump<LookupValue>> InnerSendLookupActivityAsync(LookupValueSetSeachOut lookupValueSet)
+        async ValueTask<ChatFlowJump<T>> InnerSendLookupActivityAsync(LookupValueSetOption option)
         {
-            var successActivity = context.CreateLookupActivity(lookupValueSet);
+            if (option.SkipStep)
+            {
+                return context.FlowState;
+            }
+
+            var successActivity = context.CreateLookupActivity(option);
             _ = await context.SendActivityAsync(successActivity, token).ConfigureAwait(false);
 
-            return context.ToRepeatWithLookupCacheJump(lookupValueSet);
+            return context.ToRepeatWithLookupCacheJump<T>(option);
         }
 
-        async ValueTask<ChatFlowJump<LookupValue>> InnerSendFailureActivityAsync(BotFlowFailure searchFailure)
+        async ValueTask<ChatFlowJump<T>> InnerSendFailureActivityAsync(BotFlowFailure searchFailure)
         {
             if (string.IsNullOrEmpty(searchFailure.UserMessage) is false)
             {
@@ -86,7 +96,11 @@ partial class LookupStepChatFlowExtensions
                 context.Logger.LogError("{logMessage}", logMessage);
             }
 
-            return context.RepeatSameStateJump<LookupValue>(default);
+            return context.RepeatSameStateJump<T>(default);
         }
+
+        T MapLookupValue(LookupValue lookupValue)
+            =>
+            mapFlowState.Invoke(context.FlowState, lookupValue);
     }
 }

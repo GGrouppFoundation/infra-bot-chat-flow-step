@@ -12,7 +12,7 @@ partial class AwaitDateChatFlowExtensions
 
     private const string AdaptiveCardDateFormat = "yyyy-MM-dd";
 
-    private static Result<DateOnly, BotFlowFailure> ParseDateFormAdaptiveCard(IChatFlowContext<AwaitDateOption> context)
+    private static Result<DateOnly, BotFlowFailure> ParseDateFormAdaptiveCard(ITurnContext context, DateStepOption option)
     {
         if (context.IsNotMessageType())
         {
@@ -28,7 +28,7 @@ partial class AwaitDateChatFlowExtensions
                 return default;
             }
 
-            return ParseDateOrFailure(dateText, AdaptiveCardDateFormat, context.FlowState.InvalidDateText);
+            return ParseDateOrFailure(dateText, AdaptiveCardDateFormat, option.InvalidDateText);
         }
 
         if (context.GetCardActionValueOrAbsent().IsPresent)
@@ -36,10 +36,10 @@ partial class AwaitDateChatFlowExtensions
             return default;
         }
 
-        return ParseDateOrFailure(context.Activity.Text, context.FlowState.DateFormat, context.FlowState.InvalidDateText);
+        return ParseDateOrFailure(context.Activity.Text, option.DateFormat, option.InvalidDateText);
     }
 
-    private static IActivity CreateDateAdaptiveCardActivity(IChatFlowContext<AwaitDateOption> context)
+    private static IActivity CreateDateAdaptiveCardActivity(ITurnContext context, DateStepOption option)
         =>
         new Attachment
         {
@@ -50,21 +50,22 @@ partial class AwaitDateChatFlowExtensions
                 {
                     new AdaptiveSubmitAction()
                     {
-                        Title = context.FlowState.ConfirmButtonText
+                        Title = option.ConfirmButtonText
                     }
                 },
                 Body = new()
                 {
                     new AdaptiveTextBlock
                     {
-                        Text = context.FlowState.Text,
+                        Text = option.Text,
+                        Weight = AdaptiveTextWeight.Bolder,
                         Wrap = true
                     },
                     new AdaptiveDateInput
                     {
-                        Placeholder = context.FlowState.Text,
+                        Placeholder = option.Text,
                         Id = DateId,
-                        Value = context.FlowState.DefaultDate?.ToText(AdaptiveCardDateFormat)
+                        Value = option.DefaultDate?.ToText(AdaptiveCardDateFormat)
                     }
                 }
             }

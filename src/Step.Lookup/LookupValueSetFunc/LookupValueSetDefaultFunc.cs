@@ -3,5 +3,5 @@ using System.Threading.Tasks;
 
 namespace GGroupp.Infra.Bot.Builder;
 
-public delegate ValueTask<LookupValueSetSeachOut> LookupValueSetDefaultFunc<T>(
-    T flowState, CancellationToken cancellationToken);
+public delegate ValueTask<LookupValueSetOption> LookupValueSetDefaultFunc<T>(
+    IChatFlowContext<T> context, CancellationToken cancellationToken);

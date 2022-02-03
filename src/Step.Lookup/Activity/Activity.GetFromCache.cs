@@ -20,6 +20,6 @@ partial class LookupActivity
 
         LookupValue CreateItem(LookupCacheValueJson cacheValueJson)
             =>
-            new(id, cacheValueJson.Name, cacheValueJson.Extensions);
+            new(id, cacheValueJson.Name, cacheValueJson.Data);
     }
 }
