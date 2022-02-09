@@ -11,13 +11,11 @@ public sealed record class LookupValueSetOption
     public LookupValueSetOption(
         [AllowNull] IReadOnlyCollection<LookupValue> items,
         [AllowNull] string choiceText = DefaultChoiceText,
-        LookupValueSetDirection direction = default,
-        bool skipStep = false)
+        LookupValueSetDirection direction = default)
     {
         Items = items ?? Array.Empty<LookupValue>();
         ChoiceText = string.IsNullOrEmpty(choiceText) ? DefaultChoiceText : choiceText;
         Direction = direction;
-        SkipStep = skipStep;
     }
 
     public string ChoiceText { get; }
@@ -26,5 +24,5 @@ public sealed record class LookupValueSetOption
 
     public LookupValueSetDirection Direction { get; }
 
-    public bool SkipStep { get; }
+    public bool SkipStep { get; init; }
 }

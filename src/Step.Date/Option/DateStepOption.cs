@@ -18,15 +18,14 @@ public readonly record struct DateStepOption
         [AllowNull] string dateFormat = DateFormatText,
         [AllowNull] string confirmButtonText = DefaultConfirmButtonText,
         string? invalidDateText = null,
-        DateOnly? defaultDate = null,
-        bool skipStep = false)
+        DateOnly? defaultDate = null)
     {
         this.text = text.OrNullIfEmpty();
         this.dateFormat = dateFormat.OrNullIfEmpty();
         this.confirmButtonText = confirmButtonText.OrNullIfEmpty();
         InvalidDateText = invalidDateText;
         DefaultDate = defaultDate;
-        SkipStep = skipStep;
+        SkipStep = false;
     }
 
     public string Text => text ?? DefaultText;
@@ -39,5 +38,5 @@ public readonly record struct DateStepOption
 
     public DateOnly? DefaultDate { get; }
 
-    public bool SkipStep { get; }
+    public bool SkipStep { get; init; }
 }

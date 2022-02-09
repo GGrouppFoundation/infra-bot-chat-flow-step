@@ -6,5 +6,5 @@ public readonly record struct ValueStepOption
         =>
         SkipStep = skipStep;
 
-    public bool SkipStep { get; }
+    public bool SkipStep { get; init; }
 }

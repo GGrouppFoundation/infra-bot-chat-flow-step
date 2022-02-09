@@ -13,17 +13,16 @@ public readonly record struct SkipValueStepOption
 
     public SkipValueStepOption(
         [AllowNull] string messageText = DefaultMessageText,
-        [AllowNull] string skipButtonText = DefaultSkipButtonText,
-        bool skipStep = false)
+        [AllowNull] string skipButtonText = DefaultSkipButtonText)
     {
         this.messageText = messageText.OrNullIfEmpty();
         this.skipButtonText = skipButtonText.OrNullIfEmpty();
-        SkipStep = skipStep;
+        SkipStep = false;
     }
 
     public string MessageText => messageText ?? DefaultMessageText;
 
     public string SkipButtonText => skipButtonText ?? DefaultSkipButtonText;
 
-    public bool SkipStep { get; }
+    public bool SkipStep { get; init; }
 }

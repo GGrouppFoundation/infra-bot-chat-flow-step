@@ -19,7 +19,7 @@ partial class ValueStepChatFlowExtensions
 
     public static ChatFlow<T> AwaitValue<T, TValue>(
         this ChatFlow<T> chatFlow,
-        Func<T, ValueStepOption>? optionFactory,
+        Func<T, ValueStepOption> optionFactory,
         Func<string, Result<TValue, BotFlowFailure>> valueParser,
         Func<T, TValue, T> mapFlowState)
         =>
