@@ -58,6 +58,17 @@ jobs:
     - name: Pack Step.Date.csproj
       run: dotnet pack ./src/*/Step.Date.csproj --no-restore -o ~/nuget  -c Release
 
+    # Step.Card.csproj
+
+    - name: Restore Step.Card.csproj
+      run: dotnet restore ./src/*/Step.Card.csproj
+
+    - name: Build Step.Card.csproj
+      run: dotnet build ./src/*/Step.Card.csproj --no-restore  -c Release
+
+    - name: Pack Step.Card.csproj
+      run: dotnet pack ./src/*/Step.Card.csproj --no-restore -o ~/nuget  -c Release
+
     # Push
 
     - name: Push Packages
