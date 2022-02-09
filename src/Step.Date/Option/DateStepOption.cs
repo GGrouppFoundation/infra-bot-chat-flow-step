@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace GGroupp.Infra.Bot.Builder;
 
-public readonly record struct AwaitDateOption
+public readonly record struct DateStepOption
 {
     private const string DefaultText = "Введите дату";
 
@@ -13,7 +13,7 @@ public readonly record struct AwaitDateOption
 
     private readonly string? text, dateFormat, confirmButtonText;
 
-    public AwaitDateOption(
+    public DateStepOption(
         [AllowNull] string text = DefaultText,
         [AllowNull] string dateFormat = DateFormatText,
         [AllowNull] string confirmButtonText = DefaultConfirmButtonText,
@@ -25,6 +25,7 @@ public readonly record struct AwaitDateOption
         this.confirmButtonText = confirmButtonText.OrNullIfEmpty();
         InvalidDateText = invalidDateText;
         DefaultDate = defaultDate;
+        SkipStep = false;
     }
 
     public string Text => text ?? DefaultText;
@@ -36,4 +37,6 @@ public readonly record struct AwaitDateOption
     public string? InvalidDateText { get; }
 
     public DateOnly? DefaultDate { get; }
+
+    public bool SkipStep { get; init; }
 }

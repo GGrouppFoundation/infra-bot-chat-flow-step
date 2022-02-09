@@ -15,8 +15,4 @@ public static partial class AwaitDateChatFlowExtensions
     private static string ToText(this DateOnly date, string format)
         =>
         date.ToString(format, CultureInfo.InvariantCulture);
-
-    private static ChatFlowJump<DateOnly> NextDateJump(DateOnly date)
-        =>
-        ChatFlowJump.Next(date);
 }

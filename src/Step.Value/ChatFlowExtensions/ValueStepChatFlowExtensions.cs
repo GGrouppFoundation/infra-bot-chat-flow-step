@@ -28,19 +28,19 @@ public static partial class ValueStepChatFlowExtensions
     }
 
     private static async ValueTask<Result<string?, ChatFlowJump<T>>> GetTextOrRepeatJumpAsync<T>(
-        this IChatFlowContext<SkipActivityOption> context, CancellationToken cancellationToken)
+        this IChatFlowStepContext context, SkipValueStepOption option, CancellationToken cancellationToken)
     {
         if (context.StepState is null)
         {
             var skipButtonId = Guid.NewGuid();
 
-            var activity = context.CreateSkipActivity(context.FlowState, skipButtonId);
+            var activity = context.CreateSkipActivity(option, skipButtonId);
             await context.SendActivityAsync(activity, cancellationToken).ConfigureAwait(false);
 
             return ChatFlowJump.Repeat<T>(skipButtonId);
         }
 
-        return await context.GetTextOrFailure(context.FlowState).MapFailureValueAsync(ToRepeatJumpAsync).ConfigureAwait(false);
+        return await context.GetTextOrFailure(option).MapFailureValueAsync(ToRepeatJumpAsync).ConfigureAwait(false);
 
         ValueTask<ChatFlowJump<T>> ToRepeatJumpAsync(BotFlowFailure failure)
             =>

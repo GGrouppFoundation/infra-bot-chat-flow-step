@@ -7,10 +7,10 @@ namespace GGroupp.Infra.Bot.Builder;
 
 partial class AwaitDateChatFlowExtensions
 {
-    private static Result<DateOnly, BotFlowFailure> ParseDateFromText(IChatFlowContext<AwaitDateOption> context)
+    private static Result<DateOnly, BotFlowFailure> ParseDateFromText(ITurnContext context, DateStepOption option)
         =>
         context.MayBeTextMessageActivity()
-        ? ParseDateOrFailure(context.Activity.Text, context.FlowState.DateFormat, context.FlowState.InvalidDateText)
+        ? ParseDateOrFailure(context.Activity.Text, option.DateFormat, option.InvalidDateText)
         : default;
 
     private static bool MayBeTextMessageActivity(this ITurnContext context)
@@ -19,9 +19,8 @@ partial class AwaitDateChatFlowExtensions
         string.IsNullOrEmpty(context.Activity.Text) is false &&
         context.GetCardActionValueOrAbsent().IsAbsent;
 
-    private static Activity CreateMessageActivity(IChatFlowContext<AwaitDateOption> context)
+    private static Activity CreateMessageActivity(ITurnContext context, DateStepOption option)
     {
-        var option = context.FlowState;
         var replyActivity = MessageFactory.Text(option.Text);
 
         if (option.DefaultDate is null || context.IsNotTelegramChannel())

@@ -4,5 +4,5 @@ using System.Threading.Tasks;
 
 namespace GGroupp.Infra.Bot.Builder;
 
-public delegate ValueTask<Result<LookupValueSetSeachOut, BotFlowFailure>> LookupValueSetSearchFunc<T>(
-    T flowState, LookupValueSetSeachIn searchInput, CancellationToken cancellationToken);
+public delegate ValueTask<Result<LookupValueSetOption, BotFlowFailure>> LookupValueSetSearchFunc<T>(
+    IChatFlowContext<T> context, string searchText, CancellationToken cancellationToken);

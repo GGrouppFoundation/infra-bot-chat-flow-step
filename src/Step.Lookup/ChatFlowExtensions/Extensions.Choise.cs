@@ -6,41 +6,50 @@ namespace GGroupp.Infra.Bot.Builder;
 
 partial class LookupStepChatFlowExtensions
 {
-    public static ChatFlow<TNext> AwaitChoiceValue<T, TNext>(
+    public static ChatFlow<T> AwaitChoiceValue<T>(
         this ChatFlow<T> chatFlow,
-        Func<T, LookupValueSetSeachOut> choiceSetFactory,
-        Func<T, LookupValue, TNext> mapFlowState)
+        Func<IChatFlowContext<T>, LookupValueSetOption> choiceSetFactory,
+        Func<T, LookupValue, T> mapFlowState)
         =>
         InnerAwaitChoiceValue(
             chatFlow ?? throw new ArgumentNullException(nameof(chatFlow)),
             choiceSetFactory ?? throw new ArgumentNullException(nameof(choiceSetFactory)),
             mapFlowState ?? throw new ArgumentNullException(nameof(mapFlowState)));
 
-    private static ChatFlow<TNext> InnerAwaitChoiceValue<T, TNext>(
+    private static ChatFlow<T> InnerAwaitChoiceValue<T>(
         ChatFlow<T> chatFlow,
-        Func<T, LookupValueSetSeachOut> choiceSetFactory,
-        Func<T, LookupValue, TNext> mapFlowState)
+        Func<IChatFlowContext<T>, LookupValueSetOption> choiceSetFactory,
+        Func<T, LookupValue, T> mapFlowState)
         =>
         chatFlow.ForwardValue(
-            (context, token) => context.GetChoosenValueOrRepeatAsync(choiceSetFactory, token),
-            mapFlowState);
+            (context, token) => context.GetChoosenValueOrRepeatAsync(choiceSetFactory, mapFlowState, token));
 
-    private static async ValueTask<ChatFlowJump<LookupValue>> GetChoosenValueOrRepeatAsync<T>(
+    private static async ValueTask<ChatFlowJump<T>> GetChoosenValueOrRepeatAsync<T>(
         this IChatFlowContext<T> context,
-        Func<T, LookupValueSetSeachOut> choiceSetFactory,
+        Func<IChatFlowContext<T>, LookupValueSetOption> choiceSetFactory,
+        Func<T, LookupValue, T> mapFlowState,
         CancellationToken token)
     {
         if (context.StepState is null)
         {
-            var choiceSet = choiceSetFactory.Invoke(context.FlowState);
-            var setActivity = context.CreateLookupActivity(choiceSet);
+            var option = choiceSetFactory.Invoke(context);
+            if (option.SkipStep)
+            {
+                return context.FlowState;
+            }
+
+            var setActivity = context.CreateLookupActivity(option);
 
             _ = await context.SendActivityAsync(setActivity, token).ConfigureAwait(false);
-            return context.ToRepeatWithLookupCacheJump(choiceSet);
+            return context.ToRepeatWithLookupCacheJump<T>(option);
         }
 
-        return context.GetCardActionValueOrAbsent().FlatMap(context.GetFromLookupCacheOrAbsent).Fold(
+        return context.GetCardActionValueOrAbsent().FlatMap(context.GetFromLookupCacheOrAbsent).Map(MapLookupValue).Fold(
             ChatFlowJump.Next,
-            context.RepeatSameStateJump<LookupValue>);
+            context.RepeatSameStateJump<T>);
+
+        T MapLookupValue(LookupValue lookupValue)
+            =>
+            mapFlowState.Invoke(context.FlowState, lookupValue);
     }
 }

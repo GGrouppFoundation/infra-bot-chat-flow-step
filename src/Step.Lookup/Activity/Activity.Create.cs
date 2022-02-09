@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using AdaptiveCards;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Schema;
 using Newtonsoft.Json.Linq;
@@ -7,25 +8,58 @@ namespace GGroupp.Infra.Bot.Builder;
 
 partial class LookupActivity
 {
-    internal static IActivity CreateLookupActivity(this ITurnContext context, LookupValueSetSeachOut searchOut)
+    internal static IActivity CreateLookupActivity(this ITurnContext context, LookupValueSetOption option)
     {
         if (context.IsTelegramChannel())
         {
             var telegramReply = MessageFactory.Text(default);
-            telegramReply.ChannelData = CreateTelegramChannelData(context, searchOut);
+            telegramReply.ChannelData = CreateTelegramChannelData(context, option);
 
             return telegramReply;
         }
 
-        return CreateHeroCardActivity(context, searchOut);
+        if (context.IsCardSupported())
+        {
+            return CreateAdaptiveCardActivity(context, option);
+        }
+
+        return CreateHeroCardActivity(context, option);
     }
 
-    private static IActivity CreateHeroCardActivity(ITurnContext context, LookupValueSetSeachOut searchOut)
+    private static IActivity CreateAdaptiveCardActivity(ITurnContext context, LookupValueSetOption option)
+        =>
+        new Attachment
+        {
+            ContentType = AdaptiveCard.ContentType,
+            Content = new AdaptiveCard(context.GetAdaptiveSchemaVersion())
+            {
+                Body = new()
+                {
+                    new AdaptiveTextBlock
+                    {
+                        Text = option.ChoiceText,
+                        Weight = AdaptiveTextWeight.Bolder
+                    }
+                },
+                Actions = option.Items.Select(context.CreateAdaptiveSubmitAction).ToList<AdaptiveAction>()
+            }
+        }
+        .ToActivity();
+
+    private static AdaptiveSubmitAction CreateAdaptiveSubmitAction(this ITurnContext context, LookupValue item)
+        =>
+        new()
+        {
+            Title = item.Name,
+            Data = context.BuildCardActionValue(item.Id)
+        };
+
+    private static IActivity CreateHeroCardActivity(ITurnContext context, LookupValueSetOption option)
         =>
         new HeroCard
         {
-            Title = searchOut.ChoiceText,
-            Buttons = searchOut.Items.Select(context.CreateSearchItemAction).ToArray()
+            Title = option.ChoiceText,
+            Buttons = option.Items.Select(context.CreateSearchItemAction).ToArray()
         }
         .ToAttachment()
         .ToActivity();
@@ -45,20 +79,20 @@ partial class LookupActivity
             Value = value
         };
 
-    private static JObject CreateTelegramChannelData(ITurnContext context, LookupValueSetSeachOut searchOut)
+    private static JObject CreateTelegramChannelData(ITurnContext context, LookupValueSetOption option)
         =>
         new TelegramChannelData(
-            parameters: new(context.EncodeText(searchOut.ChoiceText))
+            parameters: new(context.EncodeText(option.ChoiceText))
             {
                 ReplyMarkup = new TelegramInlineKeyboardMarkup(
-                    keyboard: CreateTelegramKeyboard(context, searchOut))
+                    keyboard: CreateTelegramKeyboard(context, option))
             })
         .ToJObject();
 
-    private static TelegramInlineKeyboardButton[][] CreateTelegramKeyboard(ITurnContext context, LookupValueSetSeachOut searchOut)
+    private static TelegramInlineKeyboardButton[][] CreateTelegramKeyboard(ITurnContext context, LookupValueSetOption option)
     {
-        var buttons = searchOut.Items.Select(context.CreateTelegramButton);
-        if (searchOut.Direction is LookupValueSetDirection.Horizon)
+        var buttons = option.Items.Select(context.CreateTelegramButton);
+        if (option.Direction is LookupValueSetDirection.Horizon)
         {
             return new[] { buttons.ToArray() };
         }
@@ -76,4 +110,8 @@ partial class LookupActivity
         {
             CallbackData = context.BuildCardActionValue(item.Id)?.ToString()
         };
+
+    private static AdaptiveSchemaVersion GetAdaptiveSchemaVersion(this ITurnContext turnContext)
+        =>
+        turnContext.IsMsteamsChannel() ? AdaptiveCard.KnownSchemaVersion : new(1, 0);
 }
