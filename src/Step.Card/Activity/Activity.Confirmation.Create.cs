@@ -73,21 +73,20 @@ partial class CardActivity
         new TelegramChannelData(
             parameters: new()
             {
-                ReplyMarkup = new TelegramInlineKeyboardMarkup(
+                ReplyMarkup = new TelegramReplyKeyboardMarkup(
                     keyboard: new[]
                     {
-                        new TelegramInlineKeyboardButton[]
+                        new TelegramKeyboardButton[]
                         {
-                            new(context.EncodeText(option.ConfirmButtonText))
-                            {
-                                CallbackData = context.BuildCardActionValue(cache.ConfirmButtonGuid)?.ToString()
-                            },
+                            new(context.EncodeText(option.ConfirmButtonText)),
                             new(context.EncodeText(option.CancelButtonText))
-                            {
-                                CallbackData = context.BuildCardActionValue(cache.CancelButtonGuid)?.ToString()
-                            }
                         }
                     })
+                {
+                    ResizeKeyboard = true,
+                    OneTimeKeyboard = true,
+                    InputFieldPlaceholder = option.QuestionText
+                }
             })
         .ToJObject();
 

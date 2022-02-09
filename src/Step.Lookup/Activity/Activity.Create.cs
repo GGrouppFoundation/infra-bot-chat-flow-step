@@ -38,7 +38,8 @@ partial class LookupActivity
                     new AdaptiveTextBlock
                     {
                         Text = option.ChoiceText,
-                        Weight = AdaptiveTextWeight.Bolder
+                        Weight = AdaptiveTextWeight.Bolder,
+                        Wrap = true
                     }
                 },
                 Actions = option.Items.Select(context.CreateAdaptiveSubmitAction).ToList<AdaptiveAction>()

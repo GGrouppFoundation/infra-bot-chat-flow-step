@@ -43,25 +43,47 @@ partial class CardChatFlowExtensions
             return ChatFlowJump.Repeat<T>(cacheJson);
         }
 
+        if (IsTextEqualTo(option.ConfirmButtonText))
+        {
+            return ToNext();
+        }
+
+        if (IsTextEqualTo(option.CancelButtonText))
+        {
+            return ToBreak();
+        }
+
         return context.GetCardActionValueOrAbsent().Fold(CheckButtonId, ToRepeat);
 
         ChatFlowJump<T> CheckButtonId(Guid buttonId)
         {
             if (buttonId == cacheJson.ConfirmButtonGuid)
             {
-                return context.FlowState;
+                return ToNext();
             }
 
             if (buttonId == cacheJson.CancelButtonGuid)
             {
-                return ChatFlowBreakState.From(option.CancelText);
+                return ToBreak();
             }
 
             return ToRepeat();
         }
 
+        ChatFlowJump<T> ToNext()
+            =>
+            context.FlowState;
+
         ChatFlowJump<T> ToRepeat()
             =>
             context.RepeatSameStateJump<T>();
+
+        ChatFlowJump<T> ToBreak()
+            =>
+            ChatFlowBreakState.From(option.CancelText);
+
+        bool IsTextEqualTo(string buttonText)
+            =>
+            string.Equals(context?.Activity?.Text, buttonText, StringComparison.InvariantCultureIgnoreCase);
     }
 }

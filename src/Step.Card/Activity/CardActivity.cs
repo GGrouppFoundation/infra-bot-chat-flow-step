@@ -53,11 +53,16 @@ internal static partial class CardActivity
                 {
                     builder = builder.Append(fieldName).Append(':');
                 }
+
+                if (string.IsNullOrEmpty(fieldValue) is false)
+                {
+                    builder = builder.Append(' ');
+                }
             }
 
             if (string.IsNullOrEmpty(fieldValue) is false)
             {
-                builder = builder.Append(' ').Append(fieldValue);
+                builder = builder.Append(fieldValue);
             }
         }
 
@@ -76,7 +81,7 @@ internal static partial class CardActivity
 
     private static bool NotEmptyField(KeyValuePair<string, string?> field)
         =>
-        string.IsNullOrEmpty(field.Key) is false && string.IsNullOrEmpty(field.Value) is false;
+        string.IsNullOrEmpty(field.Key) is false || string.IsNullOrEmpty(field.Value) is false;
 
     private static bool NotEmptyFieldName(KeyValuePair<string, string?> field)
         =>
