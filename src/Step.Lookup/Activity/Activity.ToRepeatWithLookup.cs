@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace GGroupp.Infra.Bot.Builder;
 
@@ -18,6 +17,6 @@ partial class LookupActivity
             };
         }
 
-        return cache.Any() ? ChatFlowJump.Repeat<T>(cache) : ChatFlowJump.Repeat<T>(default);
+        return ChatFlowJump.Repeat<T>(cache);
     }
 }
