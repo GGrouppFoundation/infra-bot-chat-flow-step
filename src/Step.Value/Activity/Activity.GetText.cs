@@ -1,57 +1,28 @@
 ﻿using System;
-using System.Globalization;
+using System.Collections.Generic;
+using System.Linq;
+using Microsoft.Bot.Builder;
 
 namespace GGroupp.Infra.Bot.Builder;
 
-partial class SkipActivity
+partial class SuggestionsActivity
 {
-    internal static Result<string?, BotFlowFailure> GetTextOrFailure(this IChatFlowStepContext context, SkipValueStepOption option)
+    internal static Optional<ValueResult> GetTextValueOrAbsent(this ITurnContext context, KeyValuePair<Guid, string>[][]? suggestions)
     {
-        if (context.IsNotMessageType())
+        return context.IsMessageType() ? context.GetCardActionValueOrAbsent().Fold(FromAction, FromText) : default;
+
+        Optional<ValueResult> FromAction(Guid actionGuid)
+            =>
+            suggestions?.SelectMany(Pipeline.Pipe).GetValueOrAbsent(actionGuid).Map(FromSuggestion) ?? default;
+
+        Optional<ValueResult> FromText()
         {
-            return default;
+            var valueResult = new ValueResult(context.Activity.Text, false);
+            return Optional.Present(valueResult);
         }
 
-        var activityText = context.Activity.Text;
-
-        if (context.IsTelegramChannel())
-        {
-            if (string.Equals(activityText, option.SkipButtonText, StringComparison.InvariantCulture))
-            {
-                return null;
-            }
-
-            if (context.GetCardActionValueOrAbsent().IsPresent)
-            {
-                return default;
-            }
-        }
-        else
-        {
-            var cardActionResult = context.GetCardActionValueOrAbsent();
-            if (cardActionResult.IsPresent)
-            {
-                var cardId = cardActionResult.OrThrow();
-                if (context.StepState is Guid cachedId && cardId == cachedId)
-                {
-                    return null;
-                }
-
-                var cardIdString = cardId.ToString("D", CultureInfo.InvariantCulture);
-                if (string.Equals(cardIdString, context.StepState?.ToString(), StringComparison.InvariantCultureIgnoreCase))
-                {
-                    return null;
-                }
-
-                return default;
-            }
-        }
-
-        if (string.IsNullOrEmpty(activityText))
-        {
-            return default;
-        }
-
-        return activityText;
+        static ValueResult FromSuggestion(string text)
+            =>
+            new(text, true);
     }
 }

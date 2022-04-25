@@ -52,6 +52,7 @@ partial class CardActivity
                     option.FieldValues.Where(NotEmptyField).Where(EmptyFieldName).Select(CreateTextBlock)),
                 Actions = new List<AdaptiveAction>
                 {
+
                     new AdaptiveSubmitAction
                     {
                         Title = option.ConfirmButtonText,
@@ -78,8 +79,8 @@ partial class CardActivity
                     {
                         new TelegramKeyboardButton[]
                         {
-                            new(context.EncodeText(option.ConfirmButtonText)),
-                            new(context.EncodeText(option.CancelButtonText))
+                            new(context.EncodeText(option.CancelButtonText)),
+                            new(context.EncodeText(option.ConfirmButtonText))
                         }
                     })
                 {

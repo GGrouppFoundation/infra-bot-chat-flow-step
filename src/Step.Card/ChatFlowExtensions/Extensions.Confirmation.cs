@@ -6,7 +6,7 @@ namespace GGroupp.Infra.Bot.Builder;
 
 partial class CardChatFlowExtensions
 {
-    public static ChatFlow<T> AwaitConfirmation<T>(this ChatFlow<T> chatFlow, Func<T, ConfirmationCardOption> optionFactory)
+    public static ChatFlow<T> AwaitConfirmation<T>(this ChatFlow<T> chatFlow, Func<IChatFlowContext<T>, ConfirmationCardOption> optionFactory)
     {
         _ = chatFlow ?? throw new ArgumentNullException(nameof(chatFlow));
         _ = optionFactory ?? throw new ArgumentNullException(nameof(optionFactory));
@@ -20,10 +20,10 @@ partial class CardChatFlowExtensions
 
     private static async ValueTask<ChatFlowJump<T>> GetConfirmationResultOrRepeatAsync<T>(
         this IChatFlowContext<T> context,
-        Func<T, ConfirmationCardOption> optionFactory,
+        Func<IChatFlowContext<T>, ConfirmationCardOption> optionFactory,
         CancellationToken cancellationToken)
     {
-        var option = optionFactory.Invoke(context.FlowState);
+        var option = optionFactory.Invoke(context);
         if (option.SkipStep)
         {
             return context.FlowState;

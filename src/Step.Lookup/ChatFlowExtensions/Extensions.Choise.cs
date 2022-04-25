@@ -24,13 +24,20 @@ partial class LookupStepChatFlowExtensions
         chatFlow.ForwardValue(
             (context, token) => context.GetChoosenValueOrRepeatAsync(choiceSetFactory, mapFlowState, token));
 
-    private static async ValueTask<ChatFlowJump<T>> GetChoosenValueOrRepeatAsync<T>(
+    private static ValueTask<ChatFlowJump<T>> GetChoosenValueOrRepeatAsync<T>(
         this IChatFlowContext<T> context,
         Func<IChatFlowContext<T>, LookupValueSetOption> choiceSetFactory,
         Func<T, LookupValue, T> mapFlowState,
         CancellationToken token)
     {
         if (context.StepState is null)
+        {
+            return RepeatWithCacheOrSkipAsync();
+        }
+
+        return context.GetCardActionValueOrAbsent().FlatMap(context.GetFromLookupCacheOrAbsent).FoldValueAsync(NextAsync, RepeatAsync);
+
+        async ValueTask<ChatFlowJump<T>> RepeatWithCacheOrSkipAsync()
         {
             var option = choiceSetFactory.Invoke(context);
             if (option.SkipStep)
@@ -40,16 +47,18 @@ partial class LookupStepChatFlowExtensions
 
             var setActivity = context.CreateLookupActivity(option);
 
-            _ = await context.SendActivityAsync(setActivity, token).ConfigureAwait(false);
-            return context.ToRepeatWithLookupCacheJump<T>(option);
+            var resource = await context.SendActivityAsync(setActivity, token).ConfigureAwait(false);
+            return context.ToRepeatWithLookupCacheJump<T>(resource, option);
         }
 
-        return context.GetCardActionValueOrAbsent().FlatMap(context.GetFromLookupCacheOrAbsent).Map(MapLookupValue).Fold(
-            ChatFlowJump.Next,
-            context.RepeatSameStateJump<T>);
-
-        T MapLookupValue(LookupValue lookupValue)
+        ValueTask<ChatFlowJump<T>> RepeatAsync()
             =>
-            mapFlowState.Invoke(context.FlowState, lookupValue);
+            new(context.RepeatSameStateJump<T>());
+
+        async ValueTask<ChatFlowJump<T>> NextAsync(LookupCacheResult cacheResult)
+        {
+            await context.SendResultActivityAsync(cacheResult, token).ConfigureAwait(false);
+            return mapFlowState.Invoke(context.FlowState, cacheResult.Value);
+        }
     }
 }

@@ -11,41 +11,31 @@ partial class AwaitDateChatFlowExtensions
 {
     public static ChatFlow<T> AwaitDate<T>(
         this ChatFlow<T> chatFlow,
-        Func<T, DateStepOption> optionFactory,
+        Func<IChatFlowContext<T>, DateStepOption> optionFactory,
         Func<T, DateOnly, T> mapFlowState)
-        =>
-        InnerAwaitDate(
-            chatFlow ?? throw new ArgumentNullException(nameof(chatFlow)),
-            optionFactory ?? throw new ArgumentNullException(nameof(optionFactory)),
-            mapFlowState ?? throw new ArgumentNullException(nameof(mapFlowState)));
+    {
+        _ = chatFlow ?? throw new ArgumentNullException(nameof(chatFlow));
+        _ = optionFactory ?? throw new ArgumentNullException(nameof(optionFactory));
+        _ = mapFlowState ?? throw new ArgumentNullException(nameof(mapFlowState));
 
-    private static ChatFlow<T> InnerAwaitDate<T>(
-       this ChatFlow<T> chatFlow,
-       Func<T, DateStepOption> optionFactory,
-       Func<T, DateOnly, T> mapFlowState)
-        =>
-        chatFlow.ForwardValue(
-            (context, token) => context.InnerAwaitDateAsync(optionFactory, mapFlowState, token));
+        return chatFlow.ForwardValue(InnerAwaitDateAsync);
 
-    private static ValueTask<ChatFlowJump<T>> InnerAwaitDateAsync<T>(
-        this IChatFlowContext<T> context,
-        Func<T, DateStepOption> optionFactory,
-        Func<T, DateOnly, T> mapFlowState,
-        CancellationToken token)
-        =>
-        context.IsCardSupported()
-        ? context.InnerAwaitDateAsync(optionFactory, CreateDateAdaptiveCardActivity, ParseDateFormAdaptiveCard, mapFlowState, token)
-        : context.InnerAwaitDateAsync(optionFactory, CreateMessageActivity, ParseDateFromText, mapFlowState, token);
+        ValueTask<ChatFlowJump<T>> InnerAwaitDateAsync(IChatFlowContext<T> context, CancellationToken token)
+            =>
+            context.IsCardSupported()
+            ? context.InnerAwaitDateAsync(optionFactory, CreateDateAdaptiveCardActivity, ParseDateFormAdaptiveCard, mapFlowState, token)
+            : context.InnerAwaitDateAsync(optionFactory, CreateMessageActivity, ParseDateFromText, mapFlowState, token);
+    }
 
     private static async ValueTask<ChatFlowJump<T>> InnerAwaitDateAsync<T>(
         this IChatFlowContext<T> context,
-        Func<T, DateStepOption> optionFactory,
+        Func<IChatFlowContext<T>, DateStepOption> optionFactory,
         Func<ITurnContext, DateStepOption, IActivity> activityFactory,
         Func<ITurnContext, DateStepOption, Result<DateOnly, BotFlowFailure>> dateParser,
-       Func<T, DateOnly, T> mapFlowState,
+        Func<T, DateOnly, T> mapFlowState,
         CancellationToken cancellationToken)
     {
-        var option = optionFactory.Invoke(context.FlowState);
+        var option = optionFactory.Invoke(context);
         if (option.SkipStep)
         {
             return context.FlowState;

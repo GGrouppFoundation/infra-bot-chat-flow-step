@@ -55,9 +55,8 @@ partial class LookupStepChatFlowExtensions
         var cardActionValue = context.GetCardActionValueOrAbsent();
         if (cardActionValue.IsPresent)
         {
-            return cardActionValue.FlatMap(context.GetFromLookupCacheOrAbsent).Map(MapLookupValue).Fold(
-                ChatFlowJump.Next,
-                context.RepeatSameStateJump<T>);
+            var actionValueId = cardActionValue.OrThrow();
+            return await context.GetFromLookupCacheOrAbsent(actionValueId).FoldValueAsync(NextAsync, RepeatAsync).ConfigureAwait(false);
         }
 
         var searchText = context.Activity.Text;
@@ -77,9 +76,9 @@ partial class LookupStepChatFlowExtensions
             }
 
             var successActivity = context.CreateLookupActivity(option);
-            _ = await context.SendActivityAsync(successActivity, token).ConfigureAwait(false);
+            var resource = await context.SendActivityAsync(successActivity, token).ConfigureAwait(false);
 
-            return context.ToRepeatWithLookupCacheJump<T>(option);
+            return context.ToRepeatWithLookupCacheJump<T>(resource, option);
         }
 
         async ValueTask<ChatFlowJump<T>> InnerSendFailureActivityAsync(BotFlowFailure searchFailure)
@@ -99,8 +98,14 @@ partial class LookupStepChatFlowExtensions
             return context.RepeatSameStateJump<T>(default);
         }
 
-        T MapLookupValue(LookupValue lookupValue)
+        async ValueTask<ChatFlowJump<T>> NextAsync(LookupCacheResult cacheResult)
+        {
+            await context.SendResultActivityAsync(cacheResult, token).ConfigureAwait(false);
+            return mapFlowState.Invoke(context.FlowState, cacheResult.Value);
+        }
+
+        ValueTask<ChatFlowJump<T>> RepeatAsync()
             =>
-            mapFlowState.Invoke(context.FlowState, lookupValue);
+            new(context.RepeatSameStateJump<T>());
     }
 }

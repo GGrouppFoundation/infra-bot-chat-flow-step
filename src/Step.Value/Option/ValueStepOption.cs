@@ -1,10 +1,32 @@
-﻿namespace GGroupp.Infra.Bot.Builder;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
-public readonly record struct ValueStepOption
+namespace GGroupp.Infra.Bot.Builder;
+
+public sealed record class ValueStepOption
 {
-    public ValueStepOption(bool skipStep = false)
-        =>
-        SkipStep = skipStep;
+    private const string DefaultMessageText = "Введите значение";
+
+    private const string DefaultResultText = "Выбрано значение";
+
+    private readonly string? messageText;
+
+    public ValueStepOption(
+        [AllowNull] string messageText = DefaultMessageText,
+        [AllowNull] IReadOnlyCollection<IReadOnlyCollection<string>> suggestions = default,
+        [AllowNull] string resultText = DefaultResultText)
+    {
+        this.messageText = messageText.OrNullIfEmpty();
+        Suggestions = suggestions ?? Array.Empty<IReadOnlyCollection<string>>();
+        ResultText = string.IsNullOrEmpty(resultText) ? DefaultResultText : resultText;
+    }
+
+    public string MessageText => messageText ?? DefaultMessageText;
+
+    public string ResultText { get; }
+
+    public IReadOnlyCollection<IReadOnlyCollection<string>> Suggestions { get; }
 
     public bool SkipStep { get; init; }
 }
