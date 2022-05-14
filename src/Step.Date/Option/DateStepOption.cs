@@ -11,18 +11,22 @@ public readonly record struct DateStepOption
 
     private const string DefaultConfirmButtonText = "Выбрать";
 
-    private readonly string? text, dateFormat, confirmButtonText;
+    private const string DefaultResultText = "Выбрано значение";
+
+    private readonly string? text, dateFormat, confirmButtonText, resultText;
 
     public DateStepOption(
         [AllowNull] string text = DefaultText,
         [AllowNull] string dateFormat = DateFormatText,
         [AllowNull] string confirmButtonText = DefaultConfirmButtonText,
+        [AllowNull] string resultText = DefaultResultText,
         string? invalidDateText = null,
         DateOnly? defaultDate = null)
     {
         this.text = text.OrNullIfEmpty();
         this.dateFormat = dateFormat.OrNullIfEmpty();
         this.confirmButtonText = confirmButtonText.OrNullIfEmpty();
+        this.resultText = resultText.OrNullIfEmpty();
         InvalidDateText = invalidDateText;
         DefaultDate = defaultDate;
         SkipStep = false;
@@ -33,6 +37,8 @@ public readonly record struct DateStepOption
     public string DateFormat => dateFormat ?? DateFormatText;
 
     public string ConfirmButtonText => confirmButtonText ?? DefaultConfirmButtonText;
+
+    public string ResultText => resultText ?? DefaultResultText;
 
     public string? InvalidDateText { get; }
 

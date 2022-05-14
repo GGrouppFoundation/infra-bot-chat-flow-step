@@ -1,25 +1,27 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace GGroupp.Infra.Bot.Builder;
 
 partial class LookupActivity
 {
-    internal static Optional<LookupValue> GetFromLookupCacheOrAbsent(this IStepStateSupplier flowContext, Guid id)
+    internal static Optional<LookupCacheResult> GetFromLookupCacheOrAbsent(this IStepStateSupplier flowContext, Guid id)
     {
         return GetLookupCacheOrAbsent().FlatMap(GetLookupValueOrAbsent);
 
-        Optional<Dictionary<Guid, LookupCacheValueJson>> GetLookupCacheOrAbsent()
+        Optional<LookupCacheJson> GetLookupCacheOrAbsent()
             =>
-            flowContext.StepState is Dictionary<Guid, LookupCacheValueJson> cache ? Optional.Present(cache) : default;
+            flowContext.StepState is LookupCacheJson cache ? Optional.Present(cache) : default;
 
-        Optional<LookupValue> GetLookupValueOrAbsent(Dictionary<Guid, LookupCacheValueJson> cacheItems)
+        Optional<LookupCacheResult> GetLookupValueOrAbsent(LookupCacheJson cache)
             =>
-            cacheItems.GetValueOrAbsent(id).Map(CreateItem);
+            cache.Values?.GetValueOrAbsent(id).Map(value => CreateItem(cache, value)) ?? default;
 
-        LookupValue CreateItem(LookupCacheValueJson cacheValueJson)
+        LookupCacheResult CreateItem(LookupCacheJson cache, LookupCacheValueJson cacheValueJson)
             =>
-            new(id, cacheValueJson.Name, cacheValueJson.Data);
+            new(
+                resultText: cache.ResultText,
+                resources: cache.Resources,
+                value: new(id, cacheValueJson.Name, cacheValueJson.Data));
     }
 }

@@ -10,11 +10,11 @@ namespace GGroupp.Infra.Bot.Builder;
 partial class CardActivity
 {
     internal static IActivity CreateConfirmationActivity(
-        this ITurnContext context, ConfirmationCardOption option, ConfirmationCardCacheJson cache)
+        this ITurnContext context, ConfirmationCardOption option, ConfirmationCardCacheJson cache, bool useButtons = true)
     {
         if (context.IsCardSupported())
         {
-            return context.CreateAdaptiveCardActivity(option, cache);
+            return context.CreateAdaptiveCardActivity(option, cache, useButtons);
         }
 
         if (context.IsTelegramChannel())
@@ -24,11 +24,11 @@ partial class CardActivity
             return telegramActivity;
         }
 
-        return context.CreateHeroCardConfirmationActivity(option, cache);
+        return context.CreateHeroCardConfirmationActivity(option, cache, useButtons);
     }
 
     private static IActivity CreateAdaptiveCardActivity(
-        this ITurnContext context, ConfirmationCardOption option, ConfirmationCardCacheJson cache)
+        this ITurnContext context, ConfirmationCardOption option, ConfirmationCardCacheJson cache, bool useButtons)
         =>
         new Attachment
         {
@@ -50,22 +50,27 @@ partial class CardActivity
                 }
                 .AddElements(
                     option.FieldValues.Where(NotEmptyField).Where(EmptyFieldName).Select(CreateTextBlock)),
-                Actions = new List<AdaptiveAction>
-                {
-                    new AdaptiveSubmitAction
-                    {
-                        Title = option.ConfirmButtonText,
-                        Data = context.BuildCardActionValue(cache.ConfirmButtonGuid)
-                    },
-                    new AdaptiveSubmitAction
-                    {
-                        Title = option.CancelButtonText,
-                        Data = context.BuildCardActionValue(cache.CancelButtonGuid)
-                    }
-                }
+                Actions = useButtons ? context.CreateAdaptiveCardActivityActions(option, cache) : null
             }
         }
         .ToActivity();
+
+    private static List<AdaptiveAction> CreateAdaptiveCardActivityActions(
+        this ITurnContext context, ConfirmationCardOption option, ConfirmationCardCacheJson cache)
+        =>
+        new()
+        {
+            new AdaptiveSubmitAction
+            {
+                Title = option.ConfirmButtonText,
+                Data = context.BuildCardActionValue(cache.ConfirmButtonGuid)
+            },
+            new AdaptiveSubmitAction
+            {
+                Title = option.CancelButtonText,
+                Data = context.BuildCardActionValue(cache.CancelButtonGuid)
+            }
+        };
 
     private static JObject CreateTelegramChannelData(
         this ITurnContext context, ConfirmationCardOption option, ConfirmationCardCacheJson cache)
@@ -78,8 +83,8 @@ partial class CardActivity
                     {
                         new TelegramKeyboardButton[]
                         {
-                            new(context.EncodeText(option.ConfirmButtonText)),
-                            new(context.EncodeText(option.CancelButtonText))
+                            new(context.EncodeText(option.CancelButtonText)),
+                            new(context.EncodeText(option.ConfirmButtonText))
                         }
                     })
                 {
@@ -91,29 +96,34 @@ partial class CardActivity
         .ToJObject();
 
     private static IActivity CreateHeroCardConfirmationActivity(
-        this ITurnContext context, ConfirmationCardOption option, ConfirmationCardCacheJson cache)
+        this ITurnContext context, ConfirmationCardOption option, ConfirmationCardCacheJson cache, bool useButtons)
         =>
         new HeroCard
         {
             Title = option.QuestionText,
-            Buttons = new CardAction[]
-            {
-                new(ActionTypes.PostBack)
-                {
-                    Title = option.ConfirmButtonText,
-                    Text = option.ConfirmButtonText,
-                    Value = context.BuildCardActionValue(cache.ConfirmButtonGuid)
-                },
-                new(ActionTypes.PostBack)
-                {
-                    Title = option.CancelButtonText,
-                    Text = option.CancelButtonText,
-                    Value = context.BuildCardActionValue(cache.CancelButtonGuid)
-                }
-            }
+            Buttons = useButtons ? context.CreateHeroCardConfirmationButtons(option, cache) : null
         }
         .ToCardActivity(
             context.BuildFieldsText(option.FieldValues));
+
+    private static IList<CardAction> CreateHeroCardConfirmationButtons(
+        this ITurnContext context, ConfirmationCardOption option, ConfirmationCardCacheJson cache)
+        =>
+        new CardAction[]
+        {
+            new(ActionTypes.PostBack)
+            {
+                Title = option.ConfirmButtonText,
+                Text = option.ConfirmButtonText,
+                Value = context.BuildCardActionValue(cache.ConfirmButtonGuid)
+            },
+            new(ActionTypes.PostBack)
+            {
+                Title = option.CancelButtonText,
+                Text = option.CancelButtonText,
+                Value = context.BuildCardActionValue(cache.CancelButtonGuid)
+            }
+        };
 
     private static IActivity ToCardActivity(this HeroCard card, string? fieldsText)
         =>

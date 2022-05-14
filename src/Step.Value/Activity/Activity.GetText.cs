@@ -1,57 +1,22 @@
 ﻿using System;
-using System.Globalization;
+using System.Collections.Generic;
+using System.Linq;
+using Microsoft.Bot.Builder;
 
 namespace GGroupp.Infra.Bot.Builder;
 
-partial class SkipActivity
+partial class SuggestionsActivity
 {
-    internal static Result<string?, BotFlowFailure> GetTextOrFailure(this IChatFlowStepContext context, SkipValueStepOption option)
+    internal static Optional<string> GetTextValueOrAbsent(this ITurnContext context, KeyValuePair<Guid, string>[][]? suggestions)
     {
-        if (context.IsNotMessageType())
-        {
-            return default;
-        }
+        return context.IsMessageType() ? context.GetCardActionValueOrAbsent().Fold(FromAction, FromText) : default;
 
-        var activityText = context.Activity.Text;
+        Optional<string> FromAction(Guid actionGuid)
+            =>
+            suggestions?.SelectMany(Pipeline.Pipe).GetValueOrAbsent(actionGuid) ?? default;
 
-        if (context.IsTelegramChannel())
-        {
-            if (string.Equals(activityText, option.SkipButtonText, StringComparison.InvariantCulture))
-            {
-                return null;
-            }
-
-            if (context.GetCardActionValueOrAbsent().IsPresent)
-            {
-                return default;
-            }
-        }
-        else
-        {
-            var cardActionResult = context.GetCardActionValueOrAbsent();
-            if (cardActionResult.IsPresent)
-            {
-                var cardId = cardActionResult.OrThrow();
-                if (context.StepState is Guid cachedId && cardId == cachedId)
-                {
-                    return null;
-                }
-
-                var cardIdString = cardId.ToString("D", CultureInfo.InvariantCulture);
-                if (string.Equals(cardIdString, context.StepState?.ToString(), StringComparison.InvariantCultureIgnoreCase))
-                {
-                    return null;
-                }
-
-                return default;
-            }
-        }
-
-        if (string.IsNullOrEmpty(activityText))
-        {
-            return default;
-        }
-
-        return activityText;
+        Optional<string> FromText()
+            =>
+            new(context.Activity.Text.OrEmpty());
     }
 }
