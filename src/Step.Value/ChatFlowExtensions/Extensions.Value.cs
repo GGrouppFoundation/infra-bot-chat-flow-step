@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Bot.Schema;
 
 namespace GGroupp.Infra.Bot.Builder;
 
@@ -39,49 +38,22 @@ partial class ValueStepChatFlowExtensions
             return context.FlowState;
         }
         
-        var valueResultJump = await context.GetTextOrRepeatAsync(option, cancellationToken).ConfigureAwait(false);
-        var textJump = await valueResultJump.MapValueAsync(SendResultTextAsync, ValueTask.FromResult, ValueTask.FromResult).ConfigureAwait(false);
-
+        var textJump = await context.GetTextOrRepeatAsync(option, cancellationToken).ConfigureAwait(false);
         return await textJump.ForwardValueAsync(ParseAsync).ConfigureAwait(false);
 
-        async ValueTask<string> SendResultTextAsync(ValueResult valueResult)
-        {
-            await UpdateAndSendAsync(valueResult).ConfigureAwait(false);
-            return valueResult.Text;
-        }
-
-        Task UpdateAndSendAsync(ValueResult valueResult)
-        {
-            var updateTask = context.UpdateResourceAsync(GetResource(), option.MessageText, cancellationToken);
-            if (valueResult.FromSuggestion is false)
-            {
-                return updateTask;
-            }
-
-            var sendTask = context.SendResultTextActivityAsync(option.ResultText, valueResult.Text, cancellationToken);
-            return Task.WhenAll(updateTask, sendTask);
-        }
-
-        ResourceResponse? GetResource()
-        {
-            if (context.StepState is ValueCacheJson cache)
-            {
-                return cache.Resource;
-            }
-
-            return default;
-        }
-
         ValueTask<ChatFlowJump<T>> ParseAsync(string text)
-            =>
-            valueParser.Invoke(text).FoldValueAsync(ToNextAsync, ToRepeatJumpAsync);
+        {
+            return valueParser.Invoke(text).FoldValueAsync(ToNextAsync, ToRepeatJumpAsync);;
+
+            async ValueTask<ChatFlowJump<T>> ToNextAsync(TValue value)
+            {
+                await context.SendSuccessAsync(option, text, cancellationToken);
+                return mapFlowState.Invoke(context.FlowState, value);
+            }
+        }
 
         ValueTask<ChatFlowJump<T>> ToRepeatJumpAsync(BotFlowFailure failure)
             =>
             context.ToRepeatJumpAsync<T>(failure, cancellationToken);
-
-        ValueTask<ChatFlowJump<T>> ToNextAsync(TValue value)
-            =>
-            new(mapFlowState.Invoke(context.FlowState, value));
     }
 }

@@ -17,6 +17,11 @@ public static partial class LookupStepChatFlowExtensions
         var encodedText = turnContext.EncodeTextWithStyle(cacheResult.Value.Name, BotTextStyle.Bold);
         var activity = MessageFactory.Text($"{cacheResult.ResultText}: {encodedText}");
 
+        if (turnContext.IsWebchatChannel() || turnContext.IsEmulatorChannel())
+        {
+            return turnContext.SendActivityAsync(activity, cancellationToken);
+        }
+
         var tasks = new List<Task>(cacheResult.Resources.Where(NotEmpty).Select(InnerDeleteAsync))
         {
             turnContext.SendActivityAsync(activity, cancellationToken)

@@ -35,10 +35,12 @@ partial class ValueStepChatFlowExtensions
         }
         
         var textJump = await context.GetTextOrRepeatAsync(option, cancellationToken).ConfigureAwait(false);
-        return textJump.Map(MapValue, Pipeline.Pipe, Pipeline.Pipe);
+        return await textJump.MapValueAsync(SuccessAsync, ValueTask.FromResult, ValueTask.FromResult).ConfigureAwait(false);
 
-        T MapValue(string value)
-            =>
-            mapFlowState.Invoke(context.FlowState, value);
+        async ValueTask<T> SuccessAsync(string value)
+        {
+            await context.SendSuccessAsync(option, value, cancellationToken);
+            return mapFlowState.Invoke(context.FlowState, value);
+        }
     }
 }

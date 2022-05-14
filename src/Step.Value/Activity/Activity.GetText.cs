@@ -7,22 +7,16 @@ namespace GGroupp.Infra.Bot.Builder;
 
 partial class SuggestionsActivity
 {
-    internal static Optional<ValueResult> GetTextValueOrAbsent(this ITurnContext context, KeyValuePair<Guid, string>[][]? suggestions)
+    internal static Optional<string> GetTextValueOrAbsent(this ITurnContext context, KeyValuePair<Guid, string>[][]? suggestions)
     {
         return context.IsMessageType() ? context.GetCardActionValueOrAbsent().Fold(FromAction, FromText) : default;
 
-        Optional<ValueResult> FromAction(Guid actionGuid)
+        Optional<string> FromAction(Guid actionGuid)
             =>
-            suggestions?.SelectMany(Pipeline.Pipe).GetValueOrAbsent(actionGuid).Map(FromSuggestion) ?? default;
+            suggestions?.SelectMany(Pipeline.Pipe).GetValueOrAbsent(actionGuid) ?? default;
 
-        Optional<ValueResult> FromText()
-        {
-            var valueResult = new ValueResult(context.Activity.Text, false);
-            return Optional.Present(valueResult);
-        }
-
-        static ValueResult FromSuggestion(string text)
+        Optional<string> FromText()
             =>
-            new(text, true);
+            new(context.Activity.Text.OrEmpty());
     }
 }

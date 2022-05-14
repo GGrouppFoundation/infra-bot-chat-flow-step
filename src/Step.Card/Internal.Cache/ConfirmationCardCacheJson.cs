@@ -1,4 +1,5 @@
 using System;
+using Microsoft.Bot.Schema;
 using Newtonsoft.Json;
 
 namespace GGroupp.Infra.Bot.Builder;
@@ -10,4 +11,7 @@ internal sealed record class ConfirmationCardCacheJson
 
     [JsonProperty("cancelButtonGuid")]
     public Guid CancelButtonGuid { get; init; }
+
+    [JsonProperty("resource")]
+    public ResourceResponse? Resource { get; init; }
 }

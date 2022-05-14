@@ -41,18 +41,39 @@ partial class AwaitDateChatFlowExtensions
             return context.FlowState;
         }
 
-        if (context.StepState is null)
+        if (context.StepState is DateCacheJson cacheJson)
         {
-            var dateActivity = activityFactory.Invoke(context, option);
-            await context.SendActivityAsync(dateActivity, cancellationToken).ConfigureAwait(false);
-
-            return ChatFlowJump.Repeat<T>(new());
+            return await dateParser.Invoke(context, option).FoldValueAsync(SuccessAsync, RepeatAsync).ConfigureAwait(false);
         }
 
-        var dateResult = await dateParser.Invoke(context, option).MapFailureValueAsync(SendFailureActivityAsync).ConfigureAwait(false);
-        return dateResult.MapSuccess(MapDate).Fold(ChatFlowJump.Next, context.RepeatSameStateJump<T>);
+        var dateActivity = activityFactory.Invoke(context, option);
+        var resource = await context.SendActivityAsync(dateActivity, cancellationToken).ConfigureAwait(false);
 
-        async ValueTask<Unit> SendFailureActivityAsync(BotFlowFailure flowFailure)
+        return ChatFlowJump.Repeat<T>(new DateCacheJson
+        {
+            Resource = context.IsMsteamsChannel() ? resource : null
+        });
+
+        async ValueTask<ChatFlowJump<T>> SuccessAsync(DateOnly date)
+        {
+            if (context.Activity.Value is not null)
+            {
+                var choosenText = context.EncodeTextWithStyle(date.ToString("dd.MM.yyyy"), BotTextStyle.Bold);
+                var resultActivity = MessageFactory.Text($"{option.ResultText}: {choosenText}");
+                await context.SendInsteadActivityAsync(cacheJson.Resource?.Id, resultActivity, cancellationToken).ConfigureAwait(false);
+            }
+            else if (cacheJson.Resource is not null)
+            {
+                var activity = MessageFactory.Text(option.Text);
+                activity.Id = cacheJson.Resource.Id;
+
+                await context.UpdateActivityAsync(activity, cancellationToken).ConfigureAwait(false);
+            }
+
+            return mapFlowState.Invoke(context.FlowState, date);
+        }
+
+        async ValueTask<ChatFlowJump<T>> RepeatAsync(BotFlowFailure flowFailure)
         {
             if (string.IsNullOrEmpty(flowFailure.UserMessage) is false)
             {
@@ -65,11 +86,22 @@ partial class AwaitDateChatFlowExtensions
                 context.Logger.LogError("{logMessage}", flowFailure.LogMessage);
             }
 
-            return default;
+            return context.RepeatSameStateJump<T>();
         }
+    }
 
-        T MapDate(DateOnly date)
+    private static Task SendInsteadActivityAsync(this ITurnContext context, string? activityId, IActivity activity, CancellationToken token)
+    {
+        return string.IsNullOrEmpty(activityId)
+            ? SendActivityAsync()
+            : Task.WhenAll(DeleteActivityAsync(), SendActivityAsync());
+
+        Task SendActivityAsync()
             =>
-            mapFlowState.Invoke(context.FlowState, date);
+            context.SendActivityAsync(activity, token);
+
+        Task DeleteActivityAsync()
+            =>
+            context.DeleteActivityAsync(activityId, token);
     }
 }

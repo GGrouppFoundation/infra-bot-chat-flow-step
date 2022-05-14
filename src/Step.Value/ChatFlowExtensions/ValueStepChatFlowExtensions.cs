@@ -28,39 +28,21 @@ public static partial class ValueStepChatFlowExtensions
         }
 
         var cache = (context.StepState as ValueCacheJson) ?? new();
-        var nextCache = cache.HasRepetitions ? cache : cache with
-        {
-            HasRepetitions = true
-        };
-        return ChatFlowJump.Repeat<T>(nextCache);
+        return ChatFlowJump.Repeat<T>(cache);
     }
 
-    private static ValueTask<ChatFlowJump<ValueResult>> GetTextOrRepeatAsync<T>(
+    private static ValueTask<ChatFlowJump<string>> GetTextOrRepeatAsync<T>(
         this IChatFlowContext<T> context, ValueStepOption valueStepOption, CancellationToken cancellationToken)
     {
         if (context.StepState is ValueCacheJson cache)
         {
-            return context.GetTextValueOrAbsent(cache.Suggestions).FoldValueAsync(ToNextAsync, ToRepeatAsync);
+            return new(context.GetTextValueOrAbsent(cache.Suggestions).Fold(ChatFlowJump.Next, context.RepeatSameStateJump<string>));
         }
         
         return context.SendSuggestionsActivityAsync(valueStepOption, cancellationToken);
-
-        ValueTask<ChatFlowJump<ValueResult>> ToNextAsync(ValueResult valueResult)
-            =>
-            new(valueResult);
-
-        ValueTask<ChatFlowJump<ValueResult>> ToRepeatAsync()
-        {
-            var nextCache = cache.HasRepetitions ? cache : cache with
-            {
-                HasRepetitions = true
-            };
-
-            return new(ChatFlowJump.Repeat<ValueResult>(nextCache));
-        }
     }
 
-    private static async ValueTask<ChatFlowJump<ValueResult>> SendSuggestionsActivityAsync<T>(
+    private static async ValueTask<ChatFlowJump<string>> SendSuggestionsActivityAsync<T>(
         this IChatFlowContext<T> context, ValueStepOption valueStepOption, CancellationToken cancellationToken)
     {
         var suggestions = valueStepOption.Suggestions.Select(CreateCacheSuggestionRow).ToArray();
@@ -69,12 +51,11 @@ public static partial class ValueStepChatFlowExtensions
         var resource = await context.SendActivityAsync(activity, cancellationToken).ConfigureAwait(false);
         var cache = new ValueCacheJson
         {
-            HasRepetitions = false,
-            Resource = resource,
+            Resource = context.IsMsteamsChannel() ? resource : null,
             Suggestions = suggestions
         };
 
-        return ChatFlowJump.Repeat<ValueResult>(cache);
+        return ChatFlowJump.Repeat<string>(cache);
 
         KeyValuePair<Guid, string>[] CreateCacheSuggestionRow(IReadOnlyCollection<string> row)
             =>
@@ -85,29 +66,41 @@ public static partial class ValueStepChatFlowExtensions
             new(Guid.NewGuid(), suggestion);
     }
 
-    private static Task UpdateResourceAsync(this ITurnContext context, ResourceResponse? resource, string messageText, CancellationToken token)
+    private static Task SendSuccessAsync(
+        this IChatFlowStepContext context, ValueStepOption option, string? suggestionText, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrEmpty(resource?.Id))
+        var cache = context.StepState as ValueCacheJson;
+
+        if (context.Activity.Value is not null && string.IsNullOrEmpty(suggestionText) is false)
+        {
+            var choosenText = context.EncodeTextWithStyle(suggestionText, BotTextStyle.Bold);
+            var resultActivity = MessageFactory.Text($"{option.ResultText}: {choosenText}");
+            return context.SendInsteadActivityAsync(cache?.Resource?.Id, resultActivity, cancellationToken);
+        }
+
+        if (cache?.Resource is null)
         {
             return Task.CompletedTask;
         }
 
-        var updatedActivity = MessageFactory.Text(messageText);
-        updatedActivity.Id = resource.Id;
+        var activity = MessageFactory.Text(option.MessageText);
+        activity.Id = cache.Resource.Id;
 
-        return context.UpdateActivityAsync(updatedActivity, token);
+        return context.UpdateActivityAsync(activity, cancellationToken);
     }
 
-    private static Task SendResultTextActivityAsync(this ITurnContext context, string resultText, string? choosenText, CancellationToken token)
+    private static Task SendInsteadActivityAsync(this ITurnContext context, string? activityId, IActivity activity, CancellationToken token)
     {
-        if (string.IsNullOrEmpty(choosenText))
-        {
-            return Task.CompletedTask;
-        }
+        return string.IsNullOrEmpty(activityId)
+            ? SendActivityAsync()
+            : Task.WhenAll(DeleteActivityAsync(), SendActivityAsync());
 
-        var encodedText = context.EncodeTextWithStyle(choosenText, BotTextStyle.Bold);
-        var activity = MessageFactory.Text($"{resultText}: {encodedText}");
+        Task SendActivityAsync()
+            =>
+            context.SendActivityAsync(activity, token);
 
-        return context.SendActivityAsync(activity, token);
+        Task DeleteActivityAsync()
+            =>
+            context.DeleteActivityAsync(activityId, token);
     }
 }
