@@ -11,20 +11,20 @@ public static partial class LookupStepChatFlowExtensions
 {
     private static Task SendResultActivityAsync(
         this ITurnContext turnContext,
-        LookupCacheResult cacheResult,
+        string resultMessage,
+        IReadOnlyCollection<ResourceResponse> cacheResources,
         CancellationToken cancellationToken)
     {
-        var encodedText = turnContext.EncodeTextWithStyle(cacheResult.Value.Name, BotTextStyle.Bold);
-        var activity = MessageFactory.Text($"{cacheResult.ResultText}: {encodedText}");
+        var resultMessageActivity = MessageFactory.Text(resultMessage);
 
         if (turnContext.IsWebchatChannel() || turnContext.IsEmulatorChannel())
         {
-            return turnContext.SendActivityAsync(activity, cancellationToken);
+            return turnContext.SendActivityAsync(resultMessageActivity, cancellationToken);
         }
 
-        var tasks = new List<Task>(cacheResult.Resources.Where(NotEmpty).Select(InnerDeleteAsync))
+        var tasks = new List<Task>(cacheResources.Where(NotEmpty).Select(InnerDeleteAsync))
         {
-            turnContext.SendActivityAsync(activity, cancellationToken)
+            turnContext.SendActivityAsync(resultMessageActivity, cancellationToken)
         };
         return Task.WhenAll(tasks);
 
@@ -35,5 +35,11 @@ public static partial class LookupStepChatFlowExtensions
         static bool NotEmpty(ResourceResponse? resource)
             =>
             string.IsNullOrEmpty(resource?.Id) is false;
+    }
+
+    private static string CreateDefaultResultMessage<T>(IChatFlowContext<T> context, LookupValue lookupValue)
+    {
+        var text = context.EncodeTextWithStyle(lookupValue.Name, BotTextStyle.Bold);
+        return $"Выбрано значение: {text}";
     }
 }

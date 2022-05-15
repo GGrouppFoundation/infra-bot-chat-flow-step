@@ -8,23 +8,17 @@ public sealed record class ValueStepOption
 {
     private const string DefaultMessageText = "Введите значение";
 
-    private const string DefaultResultText = "Выбрано значение";
-
     private readonly string? messageText;
 
     public ValueStepOption(
         [AllowNull] string messageText = DefaultMessageText,
-        [AllowNull] IReadOnlyCollection<IReadOnlyCollection<string>> suggestions = default,
-        [AllowNull] string resultText = DefaultResultText)
+        [AllowNull] IReadOnlyCollection<IReadOnlyCollection<string>> suggestions = default)
     {
         this.messageText = messageText.OrNullIfEmpty();
         Suggestions = suggestions ?? Array.Empty<IReadOnlyCollection<string>>();
-        ResultText = string.IsNullOrEmpty(resultText) ? DefaultResultText : resultText;
     }
 
     public string MessageText => messageText ?? DefaultMessageText;
-
-    public string ResultText { get; }
 
     public IReadOnlyCollection<IReadOnlyCollection<string>> Suggestions { get; }
 

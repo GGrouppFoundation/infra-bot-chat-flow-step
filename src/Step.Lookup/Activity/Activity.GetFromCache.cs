@@ -20,7 +20,6 @@ partial class LookupActivity
         LookupCacheResult CreateItem(LookupCacheJson cache, LookupCacheValueJson cacheValueJson)
             =>
             new(
-                resultText: cache.ResultText,
                 resources: cache.Resources,
                 value: new(id, cacheValueJson.Name, cacheValueJson.Data));
     }

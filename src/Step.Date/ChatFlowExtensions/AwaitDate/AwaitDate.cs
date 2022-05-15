@@ -12,19 +12,39 @@ partial class AwaitDateChatFlowExtensions
     public static ChatFlow<T> AwaitDate<T>(
         this ChatFlow<T> chatFlow,
         Func<IChatFlowContext<T>, DateStepOption> optionFactory,
+        Func<IChatFlowContext<T>, DateOnly, string> resultMessageFactory,
         Func<T, DateOnly, T> mapFlowState)
-    {
-        _ = chatFlow ?? throw new ArgumentNullException(nameof(chatFlow));
-        _ = optionFactory ?? throw new ArgumentNullException(nameof(optionFactory));
-        _ = mapFlowState ?? throw new ArgumentNullException(nameof(mapFlowState));
+        =>
+        InnerAwaitDate(
+            chatFlow ?? throw new ArgumentNullException(nameof(chatFlow)),
+            optionFactory ?? throw new ArgumentNullException(nameof(chatFlow)),
+            resultMessageFactory ?? throw new ArgumentNullException(nameof(resultMessageFactory)),
+            mapFlowState ?? throw new ArgumentNullException(nameof(mapFlowState)));
 
+    public static ChatFlow<T> AwaitDate<T>(
+        this ChatFlow<T> chatFlow,
+        Func<IChatFlowContext<T>, DateStepOption> optionFactory,
+        Func<T, DateOnly, T> mapFlowState)
+        =>
+        InnerAwaitDate(
+            chatFlow ?? throw new ArgumentNullException(nameof(chatFlow)),
+            optionFactory ?? throw new ArgumentNullException(nameof(chatFlow)),
+            CreateDefaultResultMessage,
+            mapFlowState ?? throw new ArgumentNullException(nameof(mapFlowState)));
+
+    public static ChatFlow<T> InnerAwaitDate<T>(
+        ChatFlow<T> chatFlow,
+        Func<IChatFlowContext<T>, DateStepOption> optionFactory,
+        Func<IChatFlowContext<T>, DateOnly, string> resultMessageFactory,
+        Func<T, DateOnly, T> mapState)
+    {
         return chatFlow.ForwardValue(InnerAwaitDateAsync);
 
         ValueTask<ChatFlowJump<T>> InnerAwaitDateAsync(IChatFlowContext<T> context, CancellationToken token)
             =>
             context.IsCardSupported()
-            ? context.InnerAwaitDateAsync(optionFactory, CreateDateAdaptiveCardActivity, ParseDateFormAdaptiveCard, mapFlowState, token)
-            : context.InnerAwaitDateAsync(optionFactory, CreateMessageActivity, ParseDateFromText, mapFlowState, token);
+            ? context.InnerAwaitDateAsync(optionFactory, CreateDateAdaptiveCardActivity, ParseDateFormAdaptiveCard, resultMessageFactory, mapState, token)
+            : context.InnerAwaitDateAsync(optionFactory, CreateMessageActivity, ParseDateFromText, resultMessageFactory, mapState, token);
     }
 
     private static async ValueTask<ChatFlowJump<T>> InnerAwaitDateAsync<T>(
@@ -32,6 +52,7 @@ partial class AwaitDateChatFlowExtensions
         Func<IChatFlowContext<T>, DateStepOption> optionFactory,
         Func<ITurnContext, DateStepOption, IActivity> activityFactory,
         Func<ITurnContext, DateStepOption, Result<DateOnly, BotFlowFailure>> dateParser,
+        Func<IChatFlowContext<T>, DateOnly, string> resultMessageFactory,
         Func<T, DateOnly, T> mapFlowState,
         CancellationToken cancellationToken)
     {
@@ -58,9 +79,10 @@ partial class AwaitDateChatFlowExtensions
         {
             if (context.Activity.Value is not null)
             {
-                var choosenText = context.EncodeTextWithStyle(date.ToString("dd.MM.yyyy"), BotTextStyle.Bold);
-                var resultActivity = MessageFactory.Text($"{option.ResultText}: {choosenText}");
-                await context.SendInsteadActivityAsync(cacheJson.Resource?.Id, resultActivity, cancellationToken).ConfigureAwait(false);
+                var resultMessage = resultMessageFactory.Invoke(context, date);
+                var resultMessageActivity = MessageFactory.Text(resultMessage);
+
+                await context.SendInsteadActivityAsync(cacheJson.Resource?.Id, resultMessageActivity, cancellationToken).ConfigureAwait(false);
             }
             else if (cacheJson.Resource is not null)
             {
@@ -103,5 +125,11 @@ partial class AwaitDateChatFlowExtensions
         Task DeleteActivityAsync()
             =>
             context.DeleteActivityAsync(activityId, token);
+    }
+
+    private static string CreateDefaultResultMessage<T>(IChatFlowContext<T> context, DateOnly date)
+    {
+        var text = context.EncodeTextWithStyle(date.ToString("dd.MM.yyyy"), BotTextStyle.Bold);
+        return $"Выбрано значение: {text}";
     }
 }

@@ -18,7 +18,6 @@ partial class LookupActivity
             cache.Resources.Add(resource);
         }
 
-        cache.ResultText = option.ResultText;
         cache.Values ??= new();
 
         foreach (var lookupValue in option.Items)

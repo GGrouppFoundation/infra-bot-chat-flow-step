@@ -66,16 +66,21 @@ public static partial class ValueStepChatFlowExtensions
             new(Guid.NewGuid(), suggestion);
     }
 
-    private static Task SendSuccessAsync(
-        this IChatFlowStepContext context, ValueStepOption option, string? suggestionText, CancellationToken cancellationToken)
+    private static Task SendSuccessAsync<T>(
+        this IChatFlowContext<T> context,
+        ValueStepOption option,
+        string? suggestionText,
+        Func<IChatFlowContext<T>, string, string> resultMessageFactory,
+        CancellationToken cancellationToken)
     {
         var cache = context.StepState as ValueCacheJson;
 
         if (context.Activity.Value is not null && string.IsNullOrEmpty(suggestionText) is false)
         {
-            var choosenText = context.EncodeTextWithStyle(suggestionText, BotTextStyle.Bold);
-            var resultActivity = MessageFactory.Text($"{option.ResultText}: {choosenText}");
-            return context.SendInsteadActivityAsync(cache?.Resource?.Id, resultActivity, cancellationToken);
+            var resultMessage = resultMessageFactory.Invoke(context, suggestionText);
+            var resultMessageActivity = MessageFactory.Text(resultMessage);
+
+            return context.SendInsteadActivityAsync(cache?.Resource?.Id, resultMessageActivity, cancellationToken);
         }
 
         if (cache?.Resource is null)
@@ -102,5 +107,11 @@ public static partial class ValueStepChatFlowExtensions
         Task DeleteActivityAsync()
             =>
             context.DeleteActivityAsync(activityId, token);
+    }
+
+    private static string CreateDefaultResultMessage<T>(IChatFlowContext<T> context, string value)
+    {
+        var text = context.EncodeTextWithStyle(value, BotTextStyle.Bold);
+        return $"Выбрано значение: {text}";
     }
 }
