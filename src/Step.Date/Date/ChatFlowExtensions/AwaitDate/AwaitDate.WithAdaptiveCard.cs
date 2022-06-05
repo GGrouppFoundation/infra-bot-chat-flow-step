@@ -3,6 +3,7 @@ using Microsoft.Bot.Builder;
 using Microsoft.Bot.Schema;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Globalization;
 
 namespace GGroupp.Infra.Bot.Builder;
 
@@ -28,7 +29,7 @@ partial class AwaitDateChatFlowExtensions
                 return default;
             }
 
-            return ParseDateOrFailure(dateText, AdaptiveCardDateFormat, option.InvalidDateText);
+            return DateOnly.ParseExact(dateText, AdaptiveCardDateFormat, CultureInfo.InvariantCulture, DateTimeStyles.None);
         }
 
         if (context.GetCardActionValueOrAbsent().IsPresent)
@@ -36,7 +37,7 @@ partial class AwaitDateChatFlowExtensions
             return default;
         }
 
-        return ParseDateOrFailure(context.Activity.Text, option.DateFormat, option.InvalidDateText);
+        return ParseDateOrFailure(context.Activity.Text, option.InvalidDateText);
     }
 
     private static IActivity CreateDateAdaptiveCardActivity(ITurnContext context, DateStepOption option)

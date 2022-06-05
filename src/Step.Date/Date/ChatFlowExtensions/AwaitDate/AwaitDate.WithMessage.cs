@@ -7,10 +7,12 @@ namespace GGroupp.Infra.Bot.Builder;
 
 partial class AwaitDateChatFlowExtensions
 {
+    private const string TelegramButtonDateFormat = "dd.MM";
+
     private static Result<DateOnly, BotFlowFailure> ParseDateFromText(ITurnContext context, DateStepOption option)
         =>
         context.MayBeTextMessageActivity()
-        ? ParseDateOrFailure(context.Activity.Text, option.DateFormat, option.InvalidDateText)
+        ? ParseDateOrFailure(context.Activity.Text, option.InvalidDateText)
         : default;
 
     private static bool MayBeTextMessageActivity(this ITurnContext context)
@@ -28,11 +30,11 @@ partial class AwaitDateChatFlowExtensions
             return replyActivity;
         }
 
-        replyActivity.ChannelData = CreateTelegramChannelData(option.DefaultDate.Value, option.DateFormat, option.Text);
+        replyActivity.ChannelData = CreateTelegramChannelData(option.DefaultDate.Value, option.Text);
         return replyActivity;
     }
 
-    private static JObject CreateTelegramChannelData(DateOnly defaultDate, string dateFormat, string? placeholder)
+    private static JObject CreateTelegramChannelData(DateOnly defaultDate, string? placeholder)
         =>
         new TelegramChannelData(
             parameters: new()
@@ -42,8 +44,9 @@ partial class AwaitDateChatFlowExtensions
                     {
                         new TelegramKeyboardButton[]
                         {
-                            new(defaultDate.AddDays(-1).ToText(dateFormat)),
-                            new(defaultDate.ToText(dateFormat))
+                            new(defaultDate.AddDays(-2).ToText(TelegramButtonDateFormat)),
+                            new(defaultDate.AddDays(-1).ToText(TelegramButtonDateFormat)),
+                            new(defaultDate.ToText(TelegramButtonDateFormat))
                         }
                     })
                 {
