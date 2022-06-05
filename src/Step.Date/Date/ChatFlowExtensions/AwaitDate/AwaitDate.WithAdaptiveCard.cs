@@ -37,7 +37,7 @@ partial class AwaitDateChatFlowExtensions
             return default;
         }
 
-        return ParseDateOrFailure(context.Activity.Text, option.InvalidDateText);
+        return ParseDateOrFailure(context.Activity.Text, option);
     }
 
     private static IActivity CreateDateAdaptiveCardActivity(ITurnContext context, DateStepOption option)
@@ -64,7 +64,7 @@ partial class AwaitDateChatFlowExtensions
                     },
                     new AdaptiveDateInput
                     {
-                        Placeholder = option.Text,
+                        Placeholder = option.Placeholder,
                         Id = DateId,
                         Value = option.DefaultDate?.ToText(AdaptiveCardDateFormat)
                     }
