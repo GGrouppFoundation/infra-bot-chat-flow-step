@@ -1,7 +1,8 @@
 ﻿using Microsoft.Bot.Builder;
 using Microsoft.Bot.Schema;
-using Newtonsoft.Json.Linq;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace GGroupp.Infra.Bot.Builder;
 
@@ -11,9 +12,7 @@ partial class AwaitDateChatFlowExtensions
 
     private static Result<DateOnly, BotFlowFailure> ParseDateFromText(ITurnContext context, DateStepOption option)
         =>
-        context.MayBeTextMessageActivity()
-        ? ParseDateOrFailure(context.Activity.Text, option.InvalidDateText)
-        : default;
+        context.MayBeTextMessageActivity() ? ParseDateOrFailure(context.Activity.Text, option) : default;
 
     private static bool MayBeTextMessageActivity(this ITurnContext context)
         =>
@@ -30,30 +29,26 @@ partial class AwaitDateChatFlowExtensions
             return replyActivity;
         }
 
-        replyActivity.ChannelData = CreateTelegramChannelData(option.DefaultDate.Value, option.Text);
-        return replyActivity;
-    }
-
-    private static JObject CreateTelegramChannelData(DateOnly defaultDate, string? placeholder)
-        =>
-        new TelegramChannelData(
+        replyActivity.ChannelData = new TelegramChannelData(
             parameters: new()
             {
                 ReplyMarkup = new TelegramReplyKeyboardMarkup(
                     keyboard: new[]
                     {
-                        new TelegramKeyboardButton[]
-                        {
-                            new(defaultDate.AddDays(-2).ToText(TelegramButtonDateFormat)),
-                            new(defaultDate.AddDays(-1).ToText(TelegramButtonDateFormat)),
-                            new(defaultDate.ToText(TelegramButtonDateFormat))
-                        }
+                        option.Suggestions.Select(ToTelegramKeyboardButton).ToArray()
                     })
                 {
                     ResizeKeyboard = true,
                     OneTimeKeyboard = true,
-                    InputFieldPlaceholder = placeholder
+                    InputFieldPlaceholder = option.Placeholder
                 }
             })
         .ToJObject();
+
+        return replyActivity;
+    }
+
+    private static TelegramKeyboardButton ToTelegramKeyboardButton(KeyValuePair<string, DateOnly> suggesion)
+        =>
+        new(suggesion.Key);
 }
