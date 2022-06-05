@@ -25,49 +25,57 @@ jobs:
     - name: Add GGroupp NuGet Source
       run: dotnet nuget add source ${{ secrets.GGROUPP_NUGET_SOURCE_URL }} -n ggroupp -u ${{ secrets.GGROUPP_NUGET_SOURCE_USER_NAME }} -p ${{ secrets.GGROUPP_NUGET_SOURCE_USER_PASSWORD }} --store-password-in-clear-text
 
-    # Step.Value.csproj
+    # Value.csproj
 
-    - name: Restore Step.Value.csproj
-      run: dotnet restore ./src/*/Step.Value.csproj
+    - name: Restore Value.csproj
+      run: dotnet restore ./src/*/*/Value.csproj
 
-    - name: Build Step.Value.csproj
-      run: dotnet build ./src/*/Step.Value.csproj --no-restore  -c Release
+    - name: Build Value.csproj
+      run: dotnet build ./src/*/*/Value.csproj --no-restore  -c Release
 
-    - name: Pack Step.Value.csproj
-      run: dotnet pack ./src/*/Step.Value.csproj --no-restore -o ~/nuget  -c Release
+    - name: Pack Value.csproj
+      run: dotnet pack ./src/*/*/Value.csproj --no-restore -o ~/nuget  -c Release
 
-    # Step.Lookup.csproj
+    # Lookup.csproj
 
-    - name: Restore Step.Lookup.csproj
-      run: dotnet restore ./src/*/Step.Lookup.csproj
+    - name: Restore Lookup.csproj
+      run: dotnet restore ./src/*/*/Lookup.csproj
 
-    - name: Build Step.Lookup.csproj
-      run: dotnet build ./src/*/Step.Lookup.csproj --no-restore  -c Release
+    - name: Build Lookup.csproj
+      run: dotnet build ./src/*/*/Lookup.csproj --no-restore  -c Release
 
-    - name: Pack Step.Lookup.csproj
-      run: dotnet pack ./src/*/Step.Lookup.csproj --no-restore -o ~/nuget  -c Release
+    - name: Pack Lookup.csproj
+      run: dotnet pack ./src/*/*/Lookup.csproj --no-restore -o ~/nuget  -c Release
 
-    # Step.Date.csproj
+    # Date.csproj
 
-    - name: Restore Step.Date.csproj
-      run: dotnet restore ./src/*/Step.Date.csproj
+    - name: Restore Date.csproj
+      run: dotnet restore ./src/*/*/Date.csproj
 
-    - name: Build Step.Date.csproj
-      run: dotnet build ./src/*/Step.Date.csproj --no-restore  -c Release
+    - name: Build Date.csproj
+      run: dotnet build ./src/*/*/Date.csproj --no-restore  -c Release
 
-    - name: Pack Step.Date.csproj
-      run: dotnet pack ./src/*/Step.Date.csproj --no-restore -o ~/nuget  -c Release
+    - name: Pack Date.csproj
+      run: dotnet pack ./src/*/*/Date.csproj --no-restore -o ~/nuget  -c Release
 
-    # Step.Card.csproj
+    # Date.Tests.csproj
 
-    - name: Restore Step.Card.csproj
-      run: dotnet restore ./src/*/Step.Card.csproj
+    - name: Restore Date.Tests.csproj
+      run: dotnet restore ./src/*/*/Date.Tests.csproj
 
-    - name: Build Step.Card.csproj
-      run: dotnet build ./src/*/Step.Card.csproj --no-restore  -c Release
+    - name: Test Date.Tests.csproj
+      run: dotnet test ./src/*/*/Date.Tests.csproj --no-restore  -c Release
 
-    - name: Pack Step.Card.csproj
-      run: dotnet pack ./src/*/Step.Card.csproj --no-restore -o ~/nuget  -c Release
+    # Card.csproj
+
+    - name: Restore Card.csproj
+      run: dotnet restore ./src/*/*/Card.csproj
+
+    - name: Build Card.csproj
+      run: dotnet build ./src/*/*/Card.csproj --no-restore  -c Release
+
+    - name: Pack Card.csproj
+      run: dotnet pack ./src/*/*/Card.csproj --no-restore -o ~/nuget  -c Release
 
     # Push
 

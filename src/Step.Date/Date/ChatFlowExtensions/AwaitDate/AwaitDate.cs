@@ -99,7 +99,7 @@ partial class AwaitDateChatFlowExtensions
         {
             if (string.IsNullOrEmpty(flowFailure.UserMessage) is false)
             {
-                var invalidDateActivity = MessageFactory.Text(option.InvalidDateText);
+                var invalidDateActivity = MessageFactory.Text(flowFailure.UserMessage);
                 await context.SendActivityAsync(invalidDateActivity, cancellationToken).ConfigureAwait(false);
             }
 
