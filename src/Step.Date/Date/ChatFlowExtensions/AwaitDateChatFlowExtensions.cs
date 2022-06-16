@@ -11,13 +11,17 @@ public static partial class AwaitDateChatFlowExtensions
 {
     private static Result<DateOnly, BotFlowFailure> ParseDateOrFailure(string text, DateStepOption option)
     {
-        return option.Suggestions.GetValueOrAbsent(text).Fold(Result.Present, ParseOrFailure).MapFailure(CreateBotFlowFailure);
+        return option.Suggestions.SelectMany(PipeSelf).GetValueOrAbsent(text).Fold(Result.Present, ParseOrFailure).MapFailure(CreateFlowFailure);
+
+        static T PipeSelf<T>(T value)
+            =>
+            value;
 
         Result<DateOnly, Unit> ParseOrFailure()
             =>
             DateParser.ParseOrFailure(text);
 
-        BotFlowFailure CreateBotFlowFailure(Unit _)
+        BotFlowFailure CreateFlowFailure(Unit _)
             =>
             string.IsNullOrEmpty(option.InvalidDateText) ? default : BotFlowFailure.From(option.InvalidDateText);
     }
