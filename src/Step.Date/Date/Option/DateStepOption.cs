@@ -12,7 +12,7 @@ public readonly record struct DateStepOption
 
     private readonly string? text, confirmButtonText;
 
-    private readonly IReadOnlyCollection<KeyValuePair<string, DateOnly>>? suggestions;
+    private readonly IReadOnlyCollection<IReadOnlyCollection<KeyValuePair<string, DateOnly>>>? suggestions;
 
     public DateStepOption(
         [AllowNull] string text = DefaultText,
@@ -20,7 +20,7 @@ public readonly record struct DateStepOption
         [AllowNull] string invalidDateText = null,
         DateOnly? defaultDate = null,
         [AllowNull] string placeholder = null,
-        [AllowNull] IReadOnlyCollection<KeyValuePair<string, DateOnly>> suggestions = null)
+        [AllowNull] IReadOnlyCollection<IReadOnlyCollection<KeyValuePair<string, DateOnly>>> suggestions = null)
     {
         this.text = text.OrNullIfEmpty();
         this.confirmButtonText = confirmButtonText.OrNullIfEmpty();
@@ -45,9 +45,9 @@ public readonly record struct DateStepOption
 
     public string? Placeholder { get; }
 
-    public IReadOnlyCollection<KeyValuePair<string, DateOnly>> Suggestions
+    public IReadOnlyCollection<IReadOnlyCollection<KeyValuePair<string, DateOnly>>> Suggestions
         =>
-        suggestions ?? Array.Empty<KeyValuePair<string, DateOnly>>();
+        suggestions ?? Array.Empty<IReadOnlyCollection<KeyValuePair<string, DateOnly>>>();
 
     public bool SkipStep { get; init; }
 }

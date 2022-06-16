@@ -33,10 +33,7 @@ partial class AwaitDateChatFlowExtensions
             parameters: new()
             {
                 ReplyMarkup = new TelegramReplyKeyboardMarkup(
-                    keyboard: new[]
-                    {
-                        option.Suggestions.Select(ToTelegramKeyboardButton).ToArray()
-                    })
+                    keyboard: option.Suggestions.Select(ToTelegramKeyboardButtonRow).ToArray())
                 {
                     ResizeKeyboard = true,
                     OneTimeKeyboard = true,
@@ -47,6 +44,10 @@ partial class AwaitDateChatFlowExtensions
 
         return replyActivity;
     }
+
+    private static TelegramKeyboardButton[] ToTelegramKeyboardButtonRow(IReadOnlyCollection<KeyValuePair<string, DateOnly>> row)
+        =>
+        row.Select(ToTelegramKeyboardButton).ToArray();
 
     private static TelegramKeyboardButton ToTelegramKeyboardButton(KeyValuePair<string, DateOnly> suggesion)
         =>
