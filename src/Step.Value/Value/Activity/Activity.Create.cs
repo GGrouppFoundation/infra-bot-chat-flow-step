@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Web;
 using AdaptiveCards;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Schema;
@@ -12,30 +13,24 @@ partial class SuggestionsActivity
 {
     internal static IActivity Create(ITurnContext context, string messageText, KeyValuePair<Guid, string>[][] suggestions)
     {
-        var encodedText = context.EncodeText(messageText);
-        if (suggestions.Sum(row => row.Length) is not > 0)
-        {
-            return MessageFactory.Text(encodedText);
-        }
-
-        if (context.IsCardSupported())
-        {
-            return context.InnerCreateAdaptiveCardActivity(encodedText, suggestions);
-        }
-
         if (context.IsTelegramChannel())
         {
-            var telegramActivity = MessageFactory.Text(encodedText);
-            telegramActivity.ChannelData = context.InnerCreateTelegramChannelData(encodedText, suggestions);
+            var telegramActivity = MessageFactory.Text(default);
+            telegramActivity.ChannelData = InnerCreateTelegramChannelData(messageText, suggestions);
 
             return telegramActivity;
         }
 
-        return MessageFactory.Text(encodedText);
+        if (context.IsNotMsteamsChannel() || suggestions.SelectMany(Pipeline.Pipe).Any() is false)
+        {
+            return MessageFactory.Text(messageText);
+        }
+
+        return context.InnerCreateAdaptiveCardActivity(messageText, suggestions);
     }
 
     private static IActivity InnerCreateAdaptiveCardActivity(
-        this ITurnContext context, string encodedMessageText, KeyValuePair<Guid, string>[][] suggestions)
+        this ITurnContext context, string messageText, KeyValuePair<Guid, string>[][] suggestions)
         =>
         new Attachment
         {
@@ -46,7 +41,7 @@ partial class SuggestionsActivity
                 {
                     new AdaptiveTextBlock
                     {
-                        Text = encodedMessageText,
+                        Text = messageText,
                         Wrap = true
                     }
                 }
@@ -56,18 +51,18 @@ partial class SuggestionsActivity
         }
         .ToActivity();
 
-    private static JObject InnerCreateTelegramChannelData(
-        this ITurnContext turnContext, string encodedMessageText, KeyValuePair<Guid, string>[][] suggestions)
+    private static JObject InnerCreateTelegramChannelData(string messageText, KeyValuePair<Guid, string>[][] suggestions)
         =>
         new TelegramChannelData(
-            parameters: new()
+            parameters: new(HttpUtility.HtmlEncode(messageText))
             {
+                ParseMode = TelegramParseMode.Html,
                 ReplyMarkup = new TelegramReplyKeyboardMarkup(
-                    keyboard: suggestions.Select(turnContext.CreateRow).ToArray())
+                    keyboard: suggestions.Select(CreateRow).ToArray())
                 {
                     ResizeKeyboard = true,
                     OneTimeKeyboard = true,
-                    InputFieldPlaceholder = encodedMessageText
+                    InputFieldPlaceholder = messageText
                 }
             })
         .ToJObject();
@@ -86,8 +81,7 @@ partial class SuggestionsActivity
             Actions = suggestions.Select(turnContext.CreateAdaptiveAction).ToList()
         };
 
-    private static AdaptiveAction CreateAdaptiveAction(
-        this ITurnContext turnContext, KeyValuePair<Guid, string> suggestion)
+    private static AdaptiveAction CreateAdaptiveAction(this ITurnContext turnContext, KeyValuePair<Guid, string> suggestion)
         =>
         new AdaptiveSubmitAction
         {
@@ -95,16 +89,13 @@ partial class SuggestionsActivity
             Data = turnContext.BuildCardActionValue(suggestion.Key)
         };
 
-    private static TelegramKeyboardButton[] CreateRow(
-        this ITurnContext turnContext, KeyValuePair<Guid, string>[] suggestionsRow)
+    private static TelegramKeyboardButton[] CreateRow(KeyValuePair<Guid, string>[] suggestionsRow)
         =>
-        suggestionsRow.Select(turnContext.CreateTelegramKeyboardButton).ToArray();
+        suggestionsRow.Select(CreateTelegramKeyboardButton).ToArray();
 
-    private static TelegramKeyboardButton CreateTelegramKeyboardButton(
-        this ITurnContext turnContext, KeyValuePair<Guid, string> suggestion)
+    private static TelegramKeyboardButton CreateTelegramKeyboardButton(KeyValuePair<Guid, string> suggestion)
         =>
-        new(
-            turnContext.EncodeText(suggestion.Value));
+        new(suggestion.Value);
 
     private static AdaptiveSchemaVersion GetAdaptiveSchemaVersion(this ITurnContext turnContext)
         =>

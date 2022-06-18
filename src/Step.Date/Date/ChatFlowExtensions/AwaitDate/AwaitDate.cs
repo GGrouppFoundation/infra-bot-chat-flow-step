@@ -35,7 +35,7 @@ partial class AwaitDateChatFlowExtensions
     public static ChatFlow<T> InnerAwaitDate<T>(
         ChatFlow<T> chatFlow,
         Func<IChatFlowContext<T>, DateStepOption> optionFactory,
-        Func<IChatFlowContext<T>, DateOnly, string> resultMessageFactory,
+        Func<IChatFlowContext<T>, DateOnly, string> messageFactory,
         Func<T, DateOnly, T> mapState)
     {
         return chatFlow.ForwardValue(InnerAwaitDateAsync);
@@ -43,15 +43,15 @@ partial class AwaitDateChatFlowExtensions
         ValueTask<ChatFlowJump<T>> InnerAwaitDateAsync(IChatFlowContext<T> context, CancellationToken token)
             =>
             context.IsCardSupported()
-            ? context.InnerAwaitDateAsync(optionFactory, CreateDateAdaptiveCardActivity, ParseDateFormAdaptiveCard, resultMessageFactory, mapState, token)
-            : context.InnerAwaitDateAsync(optionFactory, CreateMessageActivity, ParseDateFromText, resultMessageFactory, mapState, token);
+            ? context.InnerAwaitAsync(optionFactory, CreateDateAdaptiveCardActivity, ParseDateFormAdaptiveCard, messageFactory, mapState, token)
+            : context.InnerAwaitAsync(optionFactory, CreateMessageActivity, ParseDateFromText, messageFactory, mapState, token);
     }
 
-    private static async ValueTask<ChatFlowJump<T>> InnerAwaitDateAsync<T>(
+    private static async ValueTask<ChatFlowJump<T>> InnerAwaitAsync<T>(
         this IChatFlowContext<T> context,
         Func<IChatFlowContext<T>, DateStepOption> optionFactory,
         Func<ITurnContext, DateStepOption, IActivity> activityFactory,
-        Func<ITurnContext, DateStepOption, Result<DateOnly, BotFlowFailure>> dateParser,
+        Func<ITurnContext, DateCacheJson, Result<DateOnly, BotFlowFailure>> dateParser,
         Func<IChatFlowContext<T>, DateOnly, string> resultMessageFactory,
         Func<T, DateOnly, T> mapFlowState,
         CancellationToken cancellationToken)
@@ -64,27 +64,26 @@ partial class AwaitDateChatFlowExtensions
 
         if (context.StepState is DateCacheJson cacheJson)
         {
-            return await dateParser.Invoke(context, option).FoldValueAsync(SuccessAsync, RepeatAsync).ConfigureAwait(false);
+            return await dateParser.Invoke(context, cacheJson).FoldValueAsync(SuccessAsync, RepeatAsync).ConfigureAwait(false);
         }
 
         var dateActivity = activityFactory.Invoke(context, option);
         var resource = await context.SendActivityAsync(dateActivity, cancellationToken).ConfigureAwait(false);
 
-        return ChatFlowJump.Repeat<T>(new DateCacheJson
-        {
-            Resource = context.IsMsteamsChannel() ? resource : null
-        });
+        var cacheValue = BuildCacheValue(option, resource);
+        return ChatFlowJump.Repeat<T>(cacheValue);
 
         async ValueTask<ChatFlowJump<T>> SuccessAsync(DateOnly date)
         {
             if (context.Activity.Value is not null)
             {
                 var resultMessage = resultMessageFactory.Invoke(context, date);
-                var resultMessageActivity = MessageFactory.Text(resultMessage);
+                var resultActivity = MessageFactory.Text(resultMessage);
 
-                await context.SendInsteadActivityAsync(cacheJson.Resource?.Id, resultMessageActivity, cancellationToken).ConfigureAwait(false);
+                var cacheResourceId = cacheJson.Resource?.Id;
+                await context.SendInsteadActivityAsync(cacheResourceId, resultActivity, cancellationToken).ConfigureAwait(false);
             }
-            else if (cacheJson.Resource is not null)
+            else if (cacheJson.Resource is not null && context.IsMsteamsChannel())
             {
                 var activity = MessageFactory.Text(option.Text);
                 activity.Id = cacheJson.Resource.Id;
@@ -114,7 +113,7 @@ partial class AwaitDateChatFlowExtensions
 
     private static Task SendInsteadActivityAsync(this ITurnContext context, string? activityId, IActivity activity, CancellationToken token)
     {
-        return string.IsNullOrEmpty(activityId)
+        return string.IsNullOrEmpty(activityId) || context.IsNotMsteamsChannel()
             ? SendActivityAsync()
             : Task.WhenAll(DeleteActivityAsync(), SendActivityAsync());
 

@@ -13,7 +13,7 @@ partial class AwaitDateChatFlowExtensions
 
     private const string AdaptiveCardDateFormat = "yyyy-MM-dd";
 
-    private static Result<DateOnly, BotFlowFailure> ParseDateFormAdaptiveCard(ITurnContext context, DateStepOption option)
+    private static Result<DateOnly, BotFlowFailure> ParseDateFormAdaptiveCard(ITurnContext context, DateCacheJson cache)
     {
         if (context.IsNotMessageType())
         {
@@ -37,7 +37,7 @@ partial class AwaitDateChatFlowExtensions
             return default;
         }
 
-        return ParseDateOrFailure(context.Activity.Text, option);
+        return ParseDateOrFailure(context.Activity.Text, cache);
     }
 
     private static IActivity CreateDateAdaptiveCardActivity(ITurnContext context, DateStepOption option)

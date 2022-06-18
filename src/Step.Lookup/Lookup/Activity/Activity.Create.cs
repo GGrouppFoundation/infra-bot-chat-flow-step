@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Web;
 using AdaptiveCards;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Schema;
@@ -83,8 +84,9 @@ partial class LookupActivity
     private static JObject CreateTelegramChannelData(ITurnContext context, LookupValueSetOption option)
         =>
         new TelegramChannelData(
-            parameters: new(context.EncodeText(option.ChoiceText))
+            parameters: new(HttpUtility.HtmlEncode(option.ChoiceText))
             {
+                ParseMode = TelegramParseMode.Html,
                 ReplyMarkup = new TelegramInlineKeyboardMarkup(
                     keyboard: CreateTelegramKeyboard(context, option))
             })
@@ -107,7 +109,7 @@ partial class LookupActivity
 
     private static TelegramInlineKeyboardButton CreateTelegramButton(this ITurnContext context, LookupValue item)
         =>
-        new(context.EncodeText(item.Name))
+        new(item.Name)
         {
             CallbackData = context.BuildCardActionValue(item.Id)?.ToString()
         };
