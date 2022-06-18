@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Web;
 using AdaptiveCards;
-using Microsoft.Bot.Builder;
 
 namespace GGroupp.Infra.Bot.Builder;
 
@@ -14,29 +14,30 @@ internal static partial class CardActivity
         return body;
     }
 
-    private static string BuildTelegramText(this ITurnContext context, ConfirmationCardOption option)
+    private static string BuildTelegramText(ConfirmationCardOption option)
         =>
         new StringBuilder(
-            $"**{context.EncodeText(option.QuestionText)}**")
-        .AppendLineBreak()
-        .Append(
-            context.BuildFieldsText(option.FieldValues))
+            $"<b>{HttpUtility.HtmlEncode(option.QuestionText)}</b>")
+        .AppendFields(
+            option.FieldValues, true)
         .ToString();
 
-    private static string? BuildFieldsText(this ITurnContext context, IEnumerable<KeyValuePair<string, string?>> fields)
+    private static StringBuilder AppendFields(this StringBuilder builder, IEnumerable<KeyValuePair<string, string?>> fields, bool isTelegram)
     {
-        if (fields.Any() is false)
+        if (fields.Where(NotEmptyField).Any() is false)
         {
-            return null;
+            return builder;
         }
 
-        var isTelegram = context.IsTelegramChannel();
-        var builder = new StringBuilder();
-
-        foreach (var field in fields.Where(NotEmptyField).Select(Encode))
+        if (builder.Length > 0)
         {
-            var fieldName = field.Key;
-            var fieldValue = field.Value;
+            builder = builder.AppendLineBreak();
+        }
+
+        foreach (var field in fields.Where(NotEmptyField))
+        {
+            var fieldName = isTelegram ? HttpUtility.HtmlEncode(field.Key) : field.Key;
+            var fieldValue = isTelegram ? HttpUtility.HtmlEncode(field.Value) : field.Value;
 
             if (builder.Length > 0)
             {
@@ -47,7 +48,7 @@ internal static partial class CardActivity
             {
                 if (isTelegram)
                 {
-                    builder = builder.Append("**").Append(fieldName).Append(':').Append("**");
+                    builder = builder.Append("<b>").Append(fieldName).Append(':').Append("</b>");
                 }
                 else
                 {
@@ -66,18 +67,12 @@ internal static partial class CardActivity
             }
         }
 
-        return builder.ToString();
-
-        KeyValuePair<string, string?> Encode(KeyValuePair<string, string?> field)
-            =>
-            new(
-                key: context.EncodeText(field.Key),
-                value: context.EncodeText(field.Value));
+        return builder;
     }
 
     private static StringBuilder AppendLineBreak(this StringBuilder stringBuilder)
         =>
-        stringBuilder.Append("\n\r\n\r");
+        stringBuilder.Append("\n\r");
 
     private static bool NotEmptyField(KeyValuePair<string, string?> field)
         =>

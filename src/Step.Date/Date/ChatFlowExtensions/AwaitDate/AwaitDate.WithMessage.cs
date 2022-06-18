@@ -8,11 +8,9 @@ namespace GGroupp.Infra.Bot.Builder;
 
 partial class AwaitDateChatFlowExtensions
 {
-    private const string TelegramButtonDateFormat = "dd.MM";
-
-    private static Result<DateOnly, BotFlowFailure> ParseDateFromText(ITurnContext context, DateStepOption option)
+    private static Result<DateOnly, BotFlowFailure> ParseDateFromText(ITurnContext context, DateCacheJson cache)
         =>
-        context.MayBeTextMessageActivity() ? ParseDateOrFailure(context.Activity.Text, option) : default;
+        context.MayBeTextMessageActivity() ? ParseDateOrFailure(context.Activity.Text, cache) : default;
 
     private static bool MayBeTextMessageActivity(this ITurnContext context)
         =>
@@ -24,7 +22,7 @@ partial class AwaitDateChatFlowExtensions
     {
         var replyActivity = MessageFactory.Text(option.Text);
 
-        if (option.DefaultDate is null || context.IsNotTelegramChannel())
+        if (option.Suggestions.SelectMany(PipeSelf).Any() is false || context.IsNotTelegramChannel())
         {
             return replyActivity;
         }

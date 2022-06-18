@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using AdaptiveCards;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Schema;
@@ -19,8 +20,8 @@ partial class CardActivity
 
         if (context.IsTelegramChannel())
         {
-            var telegramActivity = MessageFactory.Text(context.BuildTelegramText(option));
-            telegramActivity.ChannelData = context.CreateTelegramChannelData(option, cache);
+            var telegramActivity = MessageFactory.Text(default);
+            telegramActivity.ChannelData = CreateTelegramChannelData(option);
             return telegramActivity;
         }
 
@@ -72,19 +73,19 @@ partial class CardActivity
             }
         };
 
-    private static JObject CreateTelegramChannelData(
-        this ITurnContext context, ConfirmationCardOption option, ConfirmationCardCacheJson cache)
+    private static JObject CreateTelegramChannelData(ConfirmationCardOption option)
         =>
         new TelegramChannelData(
-            parameters: new()
+            parameters: new(BuildTelegramText(option))
             {
+                ParseMode = TelegramParseMode.Html,
                 ReplyMarkup = new TelegramReplyKeyboardMarkup(
                     keyboard: new[]
                     {
                         new TelegramKeyboardButton[]
                         {
-                            new(context.EncodeText(option.CancelButtonText)),
-                            new(context.EncodeText(option.ConfirmButtonText))
+                            new(option.CancelButtonText),
+                            new(option.ConfirmButtonText)
                         }
                     })
                 {
@@ -104,7 +105,7 @@ partial class CardActivity
             Buttons = useButtons ? context.CreateHeroCardConfirmationButtons(option, cache) : null
         }
         .ToCardActivity(
-            context.BuildFieldsText(option.FieldValues));
+            new StringBuilder().AppendFields(option.FieldValues, false).ToString());
 
     private static IList<CardAction> CreateHeroCardConfirmationButtons(
         this ITurnContext context, ConfirmationCardOption option, ConfirmationCardCacheJson cache)
