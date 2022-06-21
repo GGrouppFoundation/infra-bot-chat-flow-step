@@ -1,7 +1,6 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Bot.Builder;
 using Microsoft.Bot.Schema;
 
 namespace GGroupp.Infra.Bot.Builder;
@@ -109,7 +108,7 @@ partial class CardChatFlowExtensions
 
         Task SendCancelTextAsync()
         {
-            var cancelActivity = MessageFactory.Text(option.CancelText);
+            var cancelActivity = context.CreateCancelActivity(option.CancelText);
             return context.SendActivityAsync(cancelActivity, cancellationToken);
         }
 
