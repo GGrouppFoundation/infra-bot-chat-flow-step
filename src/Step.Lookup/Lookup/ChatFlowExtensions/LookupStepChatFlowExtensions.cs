@@ -15,9 +15,9 @@ public static partial class LookupStepChatFlowExtensions
         IReadOnlyCollection<ResourceResponse> cacheResources,
         CancellationToken cancellationToken)
     {
-        var resultMessageActivity = MessageFactory.Text(resultMessage);
+        var resultMessageActivity = turnContext.CreateTextActivity(resultMessage);
 
-        if (turnContext.IsWebchatChannel() || turnContext.IsEmulatorChannel())
+        if (turnContext.IsNotTelegramChannel() && turnContext.IsNotMsteamsChannel())
         {
             return turnContext.SendActivityAsync(resultMessageActivity, cancellationToken);
         }
@@ -26,6 +26,7 @@ public static partial class LookupStepChatFlowExtensions
         {
             turnContext.SendActivityAsync(resultMessageActivity, cancellationToken)
         };
+
         return Task.WhenAll(tasks);
 
         Task InnerDeleteAsync(ResourceResponse resource)
@@ -37,9 +38,28 @@ public static partial class LookupStepChatFlowExtensions
             string.IsNullOrEmpty(resource?.Id) is false;
     }
 
-    private static string CreateDefaultResultMessage<T>(IChatFlowContext<T> context, LookupValue lookupValue)
+    private static IActivity CreateTextActivity(this ITurnContext turnContext, string resultMessage)
     {
-        var text = context.EncodeTextWithStyle(lookupValue.Name, BotTextStyle.Bold);
-        return $"Выбрано значение: {text}";
+        if (turnContext.IsNotTelegramChannel() || string.IsNullOrEmpty(resultMessage))
+        {
+            return MessageFactory.Text(resultMessage);
+        }
+
+        var activity = MessageFactory.Text(default);
+
+        var channelData = new TelegramChannelData(
+            parameters: new(resultMessage)
+            {
+                ParseMode = TelegramParseMode.Html
+            });
+
+        activity.ChannelData = channelData.ToJObject();
+        return activity;
     }
+
+    private static string CreateDefaultResultMessage<T>(IChatFlowContext<T> context, LookupValue lookupValue)
+        =>
+        context.IsNotTelegramChannel()
+        ? $"Выбрано значение: **{lookupValue.Name}**"
+        : "Выбрано значение: <b>{lookupValue.Name}</b>";
 }
