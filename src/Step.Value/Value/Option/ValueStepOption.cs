@@ -4,7 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace GGroupp.Infra.Bot.Builder;
 
-public sealed record class ValueStepOption
+public sealed record class ValueStepOption<TValue>
 {
     private const string DefaultMessageText = "Введите значение";
 
@@ -12,15 +12,15 @@ public sealed record class ValueStepOption
 
     public ValueStepOption(
         [AllowNull] string messageText = DefaultMessageText,
-        [AllowNull] IReadOnlyCollection<IReadOnlyCollection<string>> suggestions = default)
+        [AllowNull] IReadOnlyCollection<IReadOnlyCollection<KeyValuePair<string, TValue>>> suggestions = default)
     {
         this.messageText = messageText.OrNullIfEmpty();
-        Suggestions = suggestions ?? Array.Empty<IReadOnlyCollection<string>>();
+        Suggestions = suggestions ?? Array.Empty<IReadOnlyCollection<KeyValuePair<string, TValue>>>();
     }
 
     public string MessageText => messageText ?? DefaultMessageText;
 
-    public IReadOnlyCollection<IReadOnlyCollection<string>> Suggestions { get; }
+    public IReadOnlyCollection<IReadOnlyCollection<KeyValuePair<string, TValue>>> Suggestions { get; }
 
     public bool SkipStep { get; init; }
 }

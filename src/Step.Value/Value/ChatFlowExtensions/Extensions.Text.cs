@@ -8,7 +8,7 @@ partial class ValueStepChatFlowExtensions
 {
     public static ChatFlow<T> AwaitText<T>(
         this ChatFlow<T> chatFlow,
-        Func<IChatFlowContext<T>, ValueStepOption> optionFactory,
+        Func<IChatFlowContext<T>, ValueStepOption<string>> optionFactory,
         Func<IChatFlowContext<T>, string, string> resultMessageFactory,
         Func<T, string, T> mapFlowState)
         =>
@@ -20,7 +20,24 @@ partial class ValueStepChatFlowExtensions
 
     public static ChatFlow<T> AwaitText<T>(
         this ChatFlow<T> chatFlow,
-        Func<IChatFlowContext<T>, ValueStepOption> optionFactory,
+        Func<ValueStepOption<string>> optionFactory,
+        Func<IChatFlowContext<T>, string, string> resultMessageFactory,
+        Func<T, string, T> mapFlowState)
+    {
+        _ = chatFlow ?? throw new ArgumentNullException(nameof(chatFlow));
+        _ = optionFactory ?? throw new ArgumentNullException(nameof(optionFactory));
+
+        _ = resultMessageFactory ?? throw new ArgumentNullException(nameof(resultMessageFactory));
+        _ = mapFlowState ?? throw new ArgumentNullException(nameof(mapFlowState));
+
+        return InnerAwaitText(chatFlow, CreateOption, resultMessageFactory, mapFlowState);
+
+        ValueStepOption<string> CreateOption(IChatFlowContext<T> _) => optionFactory.Invoke();
+    }
+
+    public static ChatFlow<T> AwaitText<T>(
+        this ChatFlow<T> chatFlow,
+        Func<IChatFlowContext<T>, ValueStepOption<string>> optionFactory,
         Func<T, string, T> mapFlowState)
         =>
         InnerAwaitText(
@@ -31,7 +48,7 @@ partial class ValueStepChatFlowExtensions
 
     private static ChatFlow<T> InnerAwaitText<T>(
         ChatFlow<T> chatFlow,
-        Func<IChatFlowContext<T>, ValueStepOption> optionFactory,
+        Func<IChatFlowContext<T>, ValueStepOption<string>> optionFactory,
         Func<IChatFlowContext<T>, string, string> resultMessageFactory,
         Func<T, string, T> mapFlowState)
     {
@@ -39,29 +56,10 @@ partial class ValueStepChatFlowExtensions
 
         ValueTask<ChatFlowJump<T>> InnerInvokeStepAsync(IChatFlowContext<T> context, CancellationToken token)
             =>
-            context.InvokeAwaitTextStepAsync(optionFactory, resultMessageFactory, mapFlowState, token);
-    }
+            context.InvokeAwaitValueStepAsync(optionFactory, SuccessText, resultMessageFactory, mapFlowState, token);
 
-    private static async ValueTask<ChatFlowJump<T>> InvokeAwaitTextStepAsync<T>(
-        this IChatFlowContext<T> context,
-        Func<IChatFlowContext<T>, ValueStepOption> optionFactory,
-        Func<IChatFlowContext<T>, string, string> resultMessageFactory,
-        Func<T, string, T> mapFlowState,
-        CancellationToken cancellationToken)
-    {
-        var option = optionFactory.Invoke(context);
-        if (option.SkipStep)
-        {
-            return context.FlowState;
-        }
-        
-        var textJump = await context.GetTextOrRepeatAsync(option, cancellationToken).ConfigureAwait(false);
-        return await textJump.MapValueAsync(SuccessAsync, ValueTask.FromResult, ValueTask.FromResult).ConfigureAwait(false);
-
-        async ValueTask<T> SuccessAsync(string value)
-        {
-            await context.SendSuccessAsync(option, value, resultMessageFactory, cancellationToken);
-            return mapFlowState.Invoke(context.FlowState, value);
-        }
+        static Result<string, BotFlowFailure> SuccessText(string value)
+            =>
+            Result.Success(value);
     }
 }
