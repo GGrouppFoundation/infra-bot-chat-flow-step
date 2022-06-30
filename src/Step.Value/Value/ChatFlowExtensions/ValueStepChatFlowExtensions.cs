@@ -11,7 +11,32 @@ namespace GGroupp.Infra.Bot.Builder;
 
 public static partial class ValueStepChatFlowExtensions
 {
-    private static async ValueTask<ChatFlowJump<T>> ToRepeatJumpAsync<T>(
+    private static async ValueTask<ChatFlowJump<T>> SendSuggestionsActivityAsync<T, TValue>(
+        this IChatFlowContext<T> context, ValueStepOption<TValue> valueStepOption, CancellationToken cancellationToken)
+    {
+        var suggestions = valueStepOption.Suggestions.Select(CreateCacheSuggestionRow).ToArray();
+        var activity = SuggestionsActivity.Create(context, valueStepOption.MessageText, suggestions);
+
+        var resource = await context.SendActivityAsync(activity, cancellationToken).ConfigureAwait(false);
+        var cache = new ValueCacheJson<TValue>
+        {
+            Resource = context.IsMsteamsChannel() ? resource : null,
+            Suggestions = suggestions.OrNullIfEmpty(),
+            SuggestionValues = valueStepOption.Suggestions.SelectMany(Pipeline.Pipe).ToArray().OrNullIfEmpty()
+        };
+
+        return ChatFlowJump.Repeat<T>(cache);
+
+        static KeyValuePair<Guid, string>[] CreateCacheSuggestionRow(IReadOnlyCollection<KeyValuePair<string, TValue>> row)
+            =>
+            row.Select(CreateCacheSuggestion).ToArray();
+
+        static KeyValuePair<Guid, string> CreateCacheSuggestion(KeyValuePair<string, TValue> suggestion)
+            =>
+            new(Guid.NewGuid(), suggestion.Key);
+    }
+
+    private static async ValueTask<ChatFlowJump<T>> ToRepeatJumpAsync<T, TValue>(
         this IChatFlowStepContext context, BotFlowFailure failure, CancellationToken token)
     {
         var userMessage = failure.UserMessage;
@@ -27,57 +52,22 @@ public static partial class ValueStepChatFlowExtensions
             context.Logger.LogError("{logMessage}", logMessage);
         }
 
-        var cache = (context.StepState as ValueCacheJson) ?? new();
+        var cache = (context.StepState as ValueCacheJson<TValue>) ?? new();
         return ChatFlowJump.Repeat<T>(cache);
     }
 
-    private static ValueTask<ChatFlowJump<string>> GetTextOrRepeatAsync<T>(
-        this IChatFlowContext<T> context, ValueStepOption valueStepOption, CancellationToken cancellationToken)
-    {
-        if (context.StepState is ValueCacheJson cache)
-        {
-            return new(context.GetTextValueOrAbsent(cache.Suggestions).Fold(ChatFlowJump.Next, context.RepeatSameStateJump<string>));
-        }
-        
-        return context.SendSuggestionsActivityAsync(valueStepOption, cancellationToken);
-    }
-
-    private static async ValueTask<ChatFlowJump<string>> SendSuggestionsActivityAsync<T>(
-        this IChatFlowContext<T> context, ValueStepOption valueStepOption, CancellationToken cancellationToken)
-    {
-        var suggestions = valueStepOption.Suggestions.Select(CreateCacheSuggestionRow).ToArray();
-        var activity = SuggestionsActivity.Create(context, valueStepOption.MessageText, suggestions);
-
-        var resource = await context.SendActivityAsync(activity, cancellationToken).ConfigureAwait(false);
-        var cache = new ValueCacheJson
-        {
-            Resource = context.IsMsteamsChannel() ? resource : null,
-            Suggestions = suggestions
-        };
-
-        return ChatFlowJump.Repeat<string>(cache);
-
-        KeyValuePair<Guid, string>[] CreateCacheSuggestionRow(IReadOnlyCollection<string> row)
-            =>
-            row.Select(CreateCacheSuggestion).ToArray();
-
-        KeyValuePair<Guid, string> CreateCacheSuggestion(string suggestion)
-            =>
-            new(Guid.NewGuid(), suggestion);
-    }
-
-    private static Task SendSuccessAsync<T>(
+    private static Task SendSuccessAsync<T, TValue>(
         this IChatFlowContext<T> context,
-        ValueStepOption option,
-        string? suggestionText,
-        Func<IChatFlowContext<T>, string, string> resultMessageFactory,
+        ValueStepOption<TValue> option,
+        TValue suggestionValue,
+        Func<IChatFlowContext<T>, TValue, string> resultMessageFactory,
         CancellationToken cancellationToken)
     {
-        var cache = context.StepState as ValueCacheJson;
+        var cache = context.StepState as ValueCacheJson<TValue>;
 
-        if (context.Activity.Value is not null && string.IsNullOrEmpty(suggestionText) is false)
+        if (context.Activity.Value is not null)
         {
-            var resultMessage = resultMessageFactory.Invoke(context, suggestionText);
+            var resultMessage = resultMessageFactory.Invoke(context, suggestionValue);
             var resultMessageActivity = MessageFactory.Text(resultMessage);
 
             return context.SendInsteadActivityAsync(cache?.Resource?.Id, resultMessageActivity, cancellationToken);
@@ -109,9 +99,13 @@ public static partial class ValueStepChatFlowExtensions
             context.DeleteActivityAsync(activityId, token);
     }
 
-    private static string CreateDefaultResultMessage<T>(IChatFlowContext<T> context, string value)
+    private static string CreateDefaultResultMessage<T, TValue>(IChatFlowContext<T> context, TValue value)
     {
-        var text = context.EncodeTextWithStyle(value, BotTextStyle.Bold);
+        var text = context.EncodeTextWithStyle(value?.ToString(), BotTextStyle.Bold);
         return $"Выбрано значение: {text}";
     }
+
+    private static T[]? OrNullIfEmpty<T>(this T[]? source)
+        =>
+        source?.Length is not > 0 ? null : source;
 }
