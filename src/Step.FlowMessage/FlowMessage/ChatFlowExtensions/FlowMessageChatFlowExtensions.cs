@@ -23,13 +23,14 @@ public static partial class FlowMessageChatFlowExtensions
     private static async ValueTask<string?> SendTemporaryActivityAsync(
         this ITurnContext context, Func<IActivity>? temporaryActivityFactory, CancellationToken cancellationToken)
     {
-        if (temporaryActivityFactory is null)
+        var temporaryActivity = temporaryActivityFactory?.Invoke();
+
+        if (temporaryActivity is null)
         {
             return null;
         }
 
-        var activity = temporaryActivityFactory.Invoke();
-        var response = await context.SendActivityAsync(activity, cancellationToken).ConfigureAwait(false);
+        var response = await context.SendActivityAsync(temporaryActivity, cancellationToken).ConfigureAwait(false);
 
         if (TemporarySupportedChannels.Contains(context.Activity.ChannelId, StringComparer.InvariantCultureIgnoreCase) is false)
         {
