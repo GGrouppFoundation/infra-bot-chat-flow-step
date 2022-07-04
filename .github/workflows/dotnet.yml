@@ -77,6 +77,17 @@ jobs:
     - name: Pack Card.csproj
       run: dotnet pack ./src/*/*/Card.csproj --no-restore -o ~/nuget  -c Release
 
+    # FlowMessage.csproj
+
+    - name: Restore FlowMessage.csproj
+      run: dotnet restore ./src/*/*/FlowMessage.csproj
+
+    - name: Build FlowMessage.csproj
+      run: dotnet build ./src/*/*/FlowMessage.csproj --no-restore  -c Release
+
+    - name: Pack FlowMessage.csproj
+      run: dotnet pack ./src/*/*/FlowMessage.csproj --no-restore -o ~/nuget  -c Release
+
     # Push
 
     - name: Push Packages
