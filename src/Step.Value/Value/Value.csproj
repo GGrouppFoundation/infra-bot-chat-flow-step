@@ -9,6 +9,8 @@
     <RootNamespace>GGroupp.Infra.Bot.Builder</RootNamespace>
     <AssemblyName>GGroupp.Infra.Bot.Builder.ChatFlow.Step.Value</AssemblyName>
     <Version>2.4.0</Version>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="AdaptiveCards" Version="2.7.3" />
     <PackageReference Include="GGroupp.Infra.Bot.Builder.ChatFlow.Core" Version="1.4.1" />
