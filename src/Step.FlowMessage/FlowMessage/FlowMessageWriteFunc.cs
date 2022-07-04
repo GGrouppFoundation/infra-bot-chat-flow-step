@@ -4,5 +4,5 @@ using System.Threading.Tasks;
 
 namespace GGroupp.Infra.Bot.Builder;
 
-public delegate ValueTask<Unit> FlowMessageWriteFunc<TMessage>(FlowMessage<TMessage> flowMessage, CancellationToken cancellationToken)
-    where TMessage : notnull;
+public delegate ValueTask<Unit> FlowMessageWriteFunc<T>(FlowMessage<T> flowMessage, CancellationToken cancellationToken)
+    where T : notnull;

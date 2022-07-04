@@ -7,39 +7,39 @@ namespace GGroupp.Infra.Bot.Builder;
 
 partial class FlowMessageChatFlowExtensions
 {
-    public static ChatFlow<T> SendFlowMessage<T, TMessage>(
+    public static ChatFlow<T> SendFlowMessage<T, TValue>(
         this ChatFlow<T> chatFlow,
-        Func<T, TMessage> messageFactory,
-        FlowMessageWriteFunc<TMessage> flowMessageWriteFunc,
+        Func<T, TValue> valueFactory,
+        FlowMessageWriteFunc<TValue> flowMessageWriteFunc,
         Func<IActivity>? temporaryActivityFactory = null)
-        where TMessage : notnull
+        where TValue : notnull
     {
         _ = chatFlow ?? throw new ArgumentNullException(nameof(chatFlow));
-        _ = messageFactory ?? throw new ArgumentNullException(nameof(messageFactory));
+        _ = valueFactory ?? throw new ArgumentNullException(nameof(valueFactory));
         _ = flowMessageWriteFunc ?? throw new ArgumentNullException(nameof(flowMessageWriteFunc));
 
         return chatFlow.NextValue(InnerSendFlowMessageAsync);
 
         ValueTask<T> InnerSendFlowMessageAsync(IChatFlowContext<T> context, CancellationToken cancellationToken)
             =>
-            context.SendFlowMessageAsync(messageFactory, flowMessageWriteFunc, temporaryActivityFactory, cancellationToken);
+            context.SendFlowMessageAsync(valueFactory, flowMessageWriteFunc, temporaryActivityFactory, cancellationToken);
     }
 
-    private static async ValueTask<T> SendFlowMessageAsync<T, TMessage>(
+    private static async ValueTask<T> SendFlowMessageAsync<T, TValue>(
         this IChatFlowContext<T> context,
-        Func<T, TMessage> messageFactory,
-        FlowMessageWriteFunc<TMessage> flowMessageWriteFunc,
+        Func<T, TValue> valueFactory,
+        FlowMessageWriteFunc<TValue> flowMessageWriteFunc,
         Func<IActivity>? temporaryActivityFactory,
         CancellationToken cancellationToken)
-        where TMessage : notnull
+        where TValue : notnull
     {
         var temporaryActivityId = await context.SendTemporaryActivityAsync(temporaryActivityFactory, cancellationToken).ConfigureAwait(false);
 
-        var message = new FlowMessage<TMessage>(
+        var message = new FlowMessage<TValue>(
             channel: context.Activity.ChannelId,
             fromId: context.Activity.From.Id,
             temporaryActivityId: temporaryActivityId,
-            message: messageFactory.Invoke(context.FlowState));
+            value: valueFactory.Invoke(context.FlowState));
 
         _ = await flowMessageWriteFunc.Invoke(message, cancellationToken).ConfigureAwait(false);
 
