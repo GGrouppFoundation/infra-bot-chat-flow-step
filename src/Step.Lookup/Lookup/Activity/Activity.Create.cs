@@ -43,7 +43,7 @@ partial class LookupActivity
                         Wrap = true
                     }
                 },
-                Actions = option.Items.Select(context.CreateAdaptiveSubmitAction).ToList<AdaptiveAction>()
+                Actions = option.Items.AsEnumerable().Select(context.CreateAdaptiveSubmitAction).ToList<AdaptiveAction>()
             }
         }
         .ToActivity();
@@ -61,7 +61,7 @@ partial class LookupActivity
         new HeroCard
         {
             Title = option.ChoiceText,
-            Buttons = option.Items.Select(context.CreateSearchItemAction).ToArray()
+            Buttons = option.Items.AsEnumerable().Select(context.CreateSearchItemAction).ToArray()
         }
         .ToAttachment()
         .ToActivity();
@@ -94,7 +94,7 @@ partial class LookupActivity
 
     private static TelegramInlineKeyboardButton[][] CreateTelegramKeyboard(ITurnContext context, LookupValueSetOption option)
     {
-        var buttons = option.Items.Select(context.CreateTelegramButton);
+        var buttons = option.Items.AsEnumerable().Select(context.CreateTelegramButton);
         if (option.Direction is LookupValueSetDirection.Horizon)
         {
             return new[] { buttons.ToArray() };

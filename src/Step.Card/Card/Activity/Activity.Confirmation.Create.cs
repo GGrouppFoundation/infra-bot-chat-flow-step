@@ -46,11 +46,11 @@ partial class CardActivity
                     },
                     new AdaptiveFactSet
                     {
-                        Facts = option.FieldValues.Where(NotEmptyField).Where(NotEmptyFieldName).Select(CreateFact).ToList()
+                        Facts = option.FieldValues.AsEnumerable().Where(NotEmptyField).Where(NotEmptyFieldName).Select(CreateFact).ToList()
                     }
                 }
                 .AddElements(
-                    option.FieldValues.Where(NotEmptyField).Where(EmptyFieldName).Select(CreateTextBlock)),
+                    option.FieldValues.AsEnumerable().Where(NotEmptyField).Where(EmptyFieldName).Select(CreateTextBlock)),
                 Actions = useButtons ? context.CreateAdaptiveCardActivityActions(option, cache) : null
             }
         }
@@ -105,7 +105,7 @@ partial class CardActivity
             Buttons = useButtons ? context.CreateHeroCardConfirmationButtons(option, cache) : null
         }
         .ToCardActivity(
-            new StringBuilder().AppendFields(option.FieldValues, false).ToString());
+            new StringBuilder().AppendFields(option.FieldValues.AsEnumerable(), false).ToString());
 
     private static IList<CardAction> CreateHeroCardConfirmationButtons(
         this ITurnContext context, ConfirmationCardOption option, ConfirmationCardCacheJson cache)

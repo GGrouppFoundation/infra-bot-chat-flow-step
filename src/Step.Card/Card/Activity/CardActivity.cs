@@ -19,7 +19,7 @@ internal static partial class CardActivity
         new StringBuilder(
             $"<b>{HttpUtility.HtmlEncode(option.QuestionText)}</b>")
         .AppendFields(
-            option.FieldValues, true)
+            option.FieldValues.AsEnumerable(), true)
         .ToString();
 
     private static StringBuilder AppendFields(this StringBuilder builder, IEnumerable<KeyValuePair<string, string?>> fields, bool isTelegram)
