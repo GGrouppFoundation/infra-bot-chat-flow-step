@@ -108,6 +108,6 @@ partial class ValueStepChatFlowExtensions
 
         ValueTask<ChatFlowJump<T>> ToRepeatJumpAsync(BotFlowFailure failure)
             =>
-            context.ToRepeatJumpAsync<T, TValue>(failure, cancellationToken);
+            context.ToRepeatJumpAsync<T, TValue>(context.ChatFlowId, failure, cancellationToken);
     }
 }

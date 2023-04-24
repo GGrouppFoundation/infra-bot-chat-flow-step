@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Bot.Builder;
@@ -105,6 +106,11 @@ partial class AwaitDateChatFlowExtensions
             if (string.IsNullOrEmpty(flowFailure.LogMessage) is false)
             {
                 context.Logger.LogError("{logMessage}", flowFailure.LogMessage);
+                context.BotTelemetryClient.TrackEvent($"{context.ChatFlowId}StepAwaitDateFailure", new Dictionary<string, string>
+                {
+                    ["FlowId"] = context.ChatFlowId,
+                    ["Message"] = flowFailure.LogMessage
+                });
             }
 
             return context.RepeatSameStateJump<T>();

@@ -37,7 +37,7 @@ public static partial class ValueStepChatFlowExtensions
     }
 
     private static async ValueTask<ChatFlowJump<T>> ToRepeatJumpAsync<T, TValue>(
-        this IChatFlowStepContext context, BotFlowFailure failure, CancellationToken token)
+        this IChatFlowStepContext context, string chatFlowId, BotFlowFailure failure, CancellationToken token)
     {
         var userMessage = failure.UserMessage;
         if (string.IsNullOrEmpty(userMessage) is false)
@@ -50,6 +50,11 @@ public static partial class ValueStepChatFlowExtensions
         if (string.IsNullOrEmpty(logMessage) is false)
         {
             context.Logger.LogError("{logMessage}", logMessage);
+            context.BotTelemetryClient.TrackEvent($"{chatFlowId}StepValueFailure", new Dictionary<string, string>
+            {
+                ["FlowId"] = chatFlowId,
+                ["Message"] = logMessage
+            });
         }
 
         var cache = (context.StepState as ValueCacheJson<TValue>) ?? new();
