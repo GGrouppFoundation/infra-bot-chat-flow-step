@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Bot.Builder;
@@ -110,6 +111,11 @@ partial class LookupStepChatFlowExtensions
             if (string.IsNullOrEmpty(logMessage) is false)
             {
                 context.Logger.LogError("{logMessage}", logMessage);
+                context.BotTelemetryClient.TrackEvent($"{context.ChatFlowId}StepLookupFailure", new Dictionary<string, string>
+                {
+                    ["FlowId"] = context.ChatFlowId,
+                    ["Message"] = searchFailure.LogMessage
+                });
             }
 
             return context.RepeatSameStateJump<T>(default);

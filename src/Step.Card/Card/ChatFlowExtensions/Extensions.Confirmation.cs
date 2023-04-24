@@ -9,8 +9,8 @@ partial class CardChatFlowExtensions
 {
     public static ChatFlow<T> AwaitConfirmation<T>(this ChatFlow<T> chatFlow, Func<IChatFlowContext<T>, ConfirmationCardOption> optionFactory)
     {
-        _ = chatFlow ?? throw new ArgumentNullException(nameof(chatFlow));
-        _ = optionFactory ?? throw new ArgumentNullException(nameof(optionFactory));
+        ArgumentNullException.ThrowIfNull(chatFlow);
+        ArgumentNullException.ThrowIfNull(optionFactory);
 
         return chatFlow.ForwardValue(GetResultOrRepeatAsync);
 
