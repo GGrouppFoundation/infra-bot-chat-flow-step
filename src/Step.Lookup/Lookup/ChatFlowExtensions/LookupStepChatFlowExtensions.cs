@@ -57,6 +57,16 @@ public static partial class LookupStepChatFlowExtensions
         return activity;
     }
 
+    private static Task SetTypingStatusAsync(this ITurnContext context, CancellationToken cancellationToken)
+    {
+        var activity = new Activity
+        {
+            Type = ActivityTypes.Typing
+        };
+
+        return context.SendActivityAsync(activity, cancellationToken);
+    }
+
     private static string CreateDefaultResultMessage<T>(IChatFlowContext<T> context, LookupValue lookupValue)
         =>
         context.IsNotTelegramChannel()

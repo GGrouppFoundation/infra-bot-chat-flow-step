@@ -61,6 +61,8 @@ partial class LookupStepChatFlowExtensions
                 return ChatFlowJump.Repeat<T>(new());
             }
 
+            await context.SetTypingStatusAsync(token).ConfigureAwait(false);
+
             var defaultOption = await defaultItemsFunc.Invoke(context, token).ConfigureAwait(false);
             if (defaultOption.SkipStep)
             {
@@ -82,6 +84,8 @@ partial class LookupStepChatFlowExtensions
         {
             return context.RepeatSameStateJump<T>(default);
         }
+
+        await context.SetTypingStatusAsync(token).ConfigureAwait(false);
 
         var searchResult = await searchFunc.Invoke(context, searchText, token).ConfigureAwait(false);
         return await searchResult.FoldValueAsync(InnerSendLookupActivityAsync, InnerSendFailureActivityAsync).ConfigureAwait(false);
