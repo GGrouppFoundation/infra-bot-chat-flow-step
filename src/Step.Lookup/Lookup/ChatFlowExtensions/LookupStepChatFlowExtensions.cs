@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Schema;
 
-namespace GGroupp.Infra.Bot.Builder;
+namespace GarageGroup.Infra.Bot.Builder;
 
 public static partial class LookupStepChatFlowExtensions
 {
@@ -55,16 +55,6 @@ public static partial class LookupStepChatFlowExtensions
 
         activity.ChannelData = channelData.ToJObject();
         return activity;
-    }
-
-    private static Task SetTypingStatusAsync(this ITurnContext context, CancellationToken cancellationToken)
-    {
-        var activity = new Activity
-        {
-            Type = ActivityTypes.Typing
-        };
-
-        return context.SendActivityAsync(activity, cancellationToken);
     }
 
     private static string CreateDefaultResultMessage<T>(IChatFlowContext<T> context, LookupValue lookupValue)

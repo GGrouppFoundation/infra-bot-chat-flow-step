@@ -7,7 +7,7 @@ using Microsoft.Bot.Builder;
 using Microsoft.Bot.Schema;
 using Microsoft.Extensions.Logging;
 
-namespace GGroupp.Infra.Bot.Builder;
+namespace GarageGroup.Infra.Bot.Builder;
 
 public static partial class ValueStepChatFlowExtensions
 {
@@ -52,8 +52,8 @@ public static partial class ValueStepChatFlowExtensions
             context.Logger.LogError("{logMessage}", logMessage);
             context.BotTelemetryClient.TrackEvent($"{chatFlowId}StepValueFailure", new Dictionary<string, string>
             {
-                ["FlowId"] = chatFlowId,
-                ["Message"] = logMessage
+                ["flowId"] = chatFlowId,
+                ["message"] = logMessage
             });
         }
 

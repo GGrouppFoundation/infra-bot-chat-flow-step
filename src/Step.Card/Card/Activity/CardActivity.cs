@@ -4,7 +4,7 @@ using System.Text;
 using System.Web;
 using AdaptiveCards;
 
-namespace GGroupp.Infra.Bot.Builder;
+namespace GarageGroup.Infra.Bot.Builder;
 
 internal static partial class CardActivity
 {

@@ -5,9 +5,9 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using Microsoft.Bot.Schema;
 
-[assembly: InternalsVisibleTo("GGroupp.Infra.Bot.Builder.ChatFlow.Step.Date.Tests")]
+[assembly: InternalsVisibleTo("GarageGroup.Infra.Bot.Builder.ChatFlow.Step.Date.Tests")]
 
-namespace GGroupp.Infra.Bot.Builder;
+namespace GarageGroup.Infra.Bot.Builder;
 
 public static partial class AwaitDateChatFlowExtensions
 {

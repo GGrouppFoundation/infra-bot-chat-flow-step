@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Bot.Builder;
 using Microsoft.Extensions.Logging;
 
-namespace GGroupp.Infra.Bot.Builder;
+namespace GarageGroup.Infra.Bot.Builder;
 
 partial class LookupStepChatFlowExtensions
 {
@@ -117,8 +117,8 @@ partial class LookupStepChatFlowExtensions
                 context.Logger.LogError("{logMessage}", logMessage);
                 context.BotTelemetryClient.TrackEvent($"{context.ChatFlowId}StepLookupFailure", new Dictionary<string, string>
                 {
-                    ["FlowId"] = context.ChatFlowId,
-                    ["Message"] = searchFailure.LogMessage
+                    ["flowId"] = context.ChatFlowId,
+                    ["message"] = searchFailure.LogMessage
                 });
             }
 

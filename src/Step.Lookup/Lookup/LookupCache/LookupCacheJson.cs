@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Microsoft.Bot.Schema;
 using Newtonsoft.Json;
 
-namespace GGroupp.Infra.Bot.Builder;
+namespace GarageGroup.Infra.Bot.Builder;
 
 internal sealed record class LookupCacheJson
 {
