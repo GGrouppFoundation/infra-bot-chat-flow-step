@@ -5,7 +5,7 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Globalization;
 
-namespace GGroupp.Infra.Bot.Builder;
+namespace GarageGroup.Infra.Bot.Builder;
 
 partial class AwaitDateChatFlowExtensions
 {

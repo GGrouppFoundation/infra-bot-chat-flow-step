@@ -6,7 +6,7 @@ using Microsoft.Bot.Builder;
 using Microsoft.Bot.Schema;
 using Microsoft.Extensions.Logging;
 
-namespace GGroupp.Infra.Bot.Builder;
+namespace GarageGroup.Infra.Bot.Builder;
 
 partial class AwaitDateChatFlowExtensions
 {
@@ -108,8 +108,8 @@ partial class AwaitDateChatFlowExtensions
                 context.Logger.LogError("{logMessage}", flowFailure.LogMessage);
                 context.BotTelemetryClient.TrackEvent($"{context.ChatFlowId}StepAwaitDateFailure", new Dictionary<string, string>
                 {
-                    ["FlowId"] = context.ChatFlowId,
-                    ["Message"] = flowFailure.LogMessage
+                    ["flowId"] = context.ChatFlowId,
+                    ["message"] = flowFailure.LogMessage
                 });
             }
 

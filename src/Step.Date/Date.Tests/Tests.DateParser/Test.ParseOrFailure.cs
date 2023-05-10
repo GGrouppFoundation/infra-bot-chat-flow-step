@@ -1,7 +1,7 @@
 using System;
 using Xunit;
 
-namespace GGroupp.Infra.Bot.Builder.ChatFlow.Step.Date.Tests;
+namespace GarageGroup.Infra.Bot.Builder.ChatFlow.Step.Date.Tests;
 
 partial class DateParserTest
 {
