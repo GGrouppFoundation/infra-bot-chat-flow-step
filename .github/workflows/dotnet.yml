@@ -64,13 +64,13 @@ jobs:
     - name: Pack Date.csproj
       run: dotnet pack ./src/*/*/Date.csproj --no-restore -o ~/nuget  -c Release
 
-    # Date.Tests.csproj
+    # Date.Test.csproj
 
-    - name: Restore Date.Tests.csproj
-      run: dotnet restore ./src/*/*/Date.Tests.csproj
+    - name: Restore Date.Test.csproj
+      run: dotnet restore ./src/*/*/Date.Test.csproj
 
-    - name: Test Date.Tests.csproj
-      run: dotnet test ./src/*/*/Date.Tests.csproj --no-restore  -c Release
+    - name: Test Date.Test.csproj
+      run: dotnet test ./src/*/*/Date.Test.csproj --no-restore  -c Release
 
     # Card.csproj
 

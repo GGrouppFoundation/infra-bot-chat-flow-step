@@ -47,14 +47,24 @@ public static partial class ValueStepChatFlowExtensions
         }
 
         var logMessage = failure.LogMessage;
-        if (string.IsNullOrEmpty(logMessage) is false)
+        if (string.IsNullOrEmpty(logMessage) is false || failure.SourceException is not null)
         {
-            context.Logger.LogError("{logMessage}", logMessage);
-            context.BotTelemetryClient.TrackEvent($"{chatFlowId}StepValueFailure", new Dictionary<string, string>
+            context.Logger.LogError(failure.SourceException, "{logMessage}", logMessage);
+
+            var properties = new Dictionary<string, string>
             {
                 ["flowId"] = chatFlowId,
                 ["message"] = logMessage
-            });
+            };
+
+            if (failure.SourceException is not null)
+            {
+                properties["errorMessage"] = failure.SourceException.Message ?? string.Empty;
+                properties["errorType"] = failure.SourceException.GetType().FullName ?? string.Empty;
+                properties["stackTrace"] = failure.SourceException.StackTrace ?? string.Empty;
+            }
+
+            context.BotTelemetryClient.TrackEvent($"{chatFlowId}StepValueFailure", properties);
         }
 
         var cache = (context.StepState as ValueCacheJson<TValue>) ?? new();

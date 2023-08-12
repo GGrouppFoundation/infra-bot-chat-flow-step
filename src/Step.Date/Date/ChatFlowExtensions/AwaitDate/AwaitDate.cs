@@ -103,14 +103,24 @@ partial class AwaitDateChatFlowExtensions
                 await context.SendActivityAsync(invalidDateActivity, cancellationToken).ConfigureAwait(false);
             }
 
-            if (string.IsNullOrEmpty(flowFailure.LogMessage) is false)
+            if (string.IsNullOrEmpty(flowFailure.LogMessage) is false || flowFailure.SourceException is not null)
             {
-                context.Logger.LogError("{logMessage}", flowFailure.LogMessage);
-                context.BotTelemetryClient.TrackEvent($"{context.ChatFlowId}StepAwaitDateFailure", new Dictionary<string, string>
+                context.Logger.LogError(flowFailure.SourceException, "{logMessage}", flowFailure.LogMessage);
+
+                var properties = new Dictionary<string, string>
                 {
                     ["flowId"] = context.ChatFlowId,
                     ["message"] = flowFailure.LogMessage
-                });
+                };
+
+                if (flowFailure.SourceException is not null)
+                {
+                    properties["errorMessage"] = flowFailure.SourceException.Message ?? string.Empty;
+                    properties["errorType"] = flowFailure.SourceException.GetType().FullName ?? string.Empty;
+                    properties["stackTrace"] = flowFailure.SourceException.StackTrace ?? string.Empty;
+                }
+
+                context.BotTelemetryClient.TrackEvent($"{context.ChatFlowId}StepAwaitDateFailure", properties);
             }
 
             return context.RepeatSameStateJump<T>();

@@ -112,14 +112,24 @@ partial class LookupStepChatFlowExtensions
             }
 
             var logMessage = searchFailure.LogMessage;
-            if (string.IsNullOrEmpty(logMessage) is false)
+            if (string.IsNullOrEmpty(logMessage) is false || searchFailure.SourceException is not null)
             {
-                context.Logger.LogError("{logMessage}", logMessage);
-                context.BotTelemetryClient.TrackEvent($"{context.ChatFlowId}StepLookupFailure", new Dictionary<string, string>
+                context.Logger.LogError(searchFailure.SourceException, "{logMessage}", logMessage);
+
+                var properties = new Dictionary<string, string>
                 {
                     ["flowId"] = context.ChatFlowId,
                     ["message"] = searchFailure.LogMessage
-                });
+                };
+
+                if (searchFailure.SourceException is not null)
+                {
+                    properties["errorMessage"] = searchFailure.SourceException.Message ?? string.Empty;
+                    properties["errorType"] = searchFailure.SourceException.GetType().FullName ?? string.Empty;
+                    properties["stackTrace"] = searchFailure.SourceException.StackTrace ?? string.Empty;
+                }
+
+                context.BotTelemetryClient.TrackEvent($"{context.ChatFlowId}StepLookupFailure", properties);
             }
 
             return context.RepeatSameStateJump<T>(default);
