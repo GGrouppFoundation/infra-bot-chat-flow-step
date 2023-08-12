@@ -5,7 +5,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using Microsoft.Bot.Schema;
 
-[assembly: InternalsVisibleTo("GarageGroup.Infra.Bot.Builder.ChatFlow.Step.Date.Tests")]
+[assembly: InternalsVisibleTo("GarageGroup.Infra.Bot.Builder.ChatFlow.Step.Date.Test")]
 
 namespace GarageGroup.Infra.Bot.Builder;
 
