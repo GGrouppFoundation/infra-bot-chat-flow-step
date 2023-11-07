@@ -19,7 +19,7 @@ partial class DateParserTest
     [InlineData("03.01.122", 2122, 01, 03)]
     [InlineData("03.01.0122", 0122, 01, 03)]
     [InlineData("05.07.22", 2022, 07, 05)]
-    public void ParseOrFailure_TextIsCorrectDate_ExpectSuccess(string text, int year, int month, int day)
+    public static void ParseOrFailure_TextIsCorrectDate_ExpectSuccess(string text, int year, int month, int day)
     {
         var actual = DateParser.ParseOrFailure(text);
         var expected = new DateOnly(year, month, day);
@@ -36,7 +36,7 @@ partial class DateParserTest
     [InlineData("31.12", 12, 31)]
     [InlineData("7.3", 03, 07)]
     [InlineData("1.03", 03, 01)]
-    public void ParseOrFailure_TextIsOnlyDayAndMonthNumbers_ExpectSuccessWithCurrentYear(string text, int month, int day)
+    public static void ParseOrFailure_TextIsOnlyDayAndMonthNumbers_ExpectSuccessWithCurrentYear(string text, int month, int day)
     {
         var actual = DateParser.ParseOrFailure(text);
 
@@ -53,7 +53,7 @@ partial class DateParserTest
     [InlineData("  17   ", 17)]
     [InlineData("1", 01)]
     [InlineData("09", 09)]
-    public void ParseOrFailure_TextIsOnlyDayNumber_ExpectSuccessWithCurrentYearAndMonth(string text, int day)
+    public static void ParseOrFailure_TextIsOnlyDayNumber_ExpectSuccessWithCurrentYearAndMonth(string text, int day)
     {
         var actual = DateParser.ParseOrFailure(text);
 
@@ -81,7 +81,7 @@ partial class DateParserTest
     [InlineData("01.05.2022 m")]
     [InlineData("01..12")]
     [InlineData(".01.12")]
-    public void ParseOrFailure_TextIsNotDate_ExpectFailure(string? text)
+    public static void ParseOrFailure_TextIsNotDate_ExpectFailure(string? text)
     {
         var actual = DateParser.ParseOrFailure(text);
         var expected = Result.Absent<DateOnly>();
