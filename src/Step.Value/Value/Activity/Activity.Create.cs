@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Web;
 using AdaptiveCards;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Schema;
@@ -54,7 +53,7 @@ partial class SuggestionsActivity
     private static JObject InnerCreateTelegramChannelData(string messageText, KeyValuePair<Guid, string>[][] suggestions)
         =>
         new TelegramChannelData(
-            parameters: new(HttpUtility.HtmlEncode(messageText))
+            parameters: new(messageText)
             {
                 ParseMode = TelegramParseMode.Html,
                 ReplyMarkup = new TelegramReplyKeyboardMarkup(
