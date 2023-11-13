@@ -47,25 +47,11 @@ partial class DateParserTest
     }
 
     [Theory]
-    [InlineData("17", 17)]
-    [InlineData(" 17", 17)]
-    [InlineData("17 ", 17)]
-    [InlineData("  17   ", 17)]
-    [InlineData("1", 01)]
-    [InlineData("09", 09)]
-    public static void ParseOrFailure_TextIsOnlyDayNumber_ExpectSuccessWithCurrentYearAndMonth(string text, int day)
-    {
-        var actual = DateParser.ParseOrFailure(text);
-
-        var now = DateTime.Now;
-        var expected = new DateOnly(now.Year, now.Month, day);
-
-        Assert.Equal(expected, actual);
-    }
-
-    [Theory]
     [InlineData(null)]
     [InlineData("")]
+    [InlineData("17")]
+    [InlineData(" 17")]
+    [InlineData("  17  ")]
     [InlineData("t31")]
     [InlineData("32")]
     [InlineData("101")]

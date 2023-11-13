@@ -9,7 +9,7 @@ internal static partial class DateParser
 
     static DateParser()
         =>
-        DateOnlyRegex = new(@"^(\d{1,2})(\.(\d{1,2})(\.(\d{2,4}))?)?$", RegexOptions.CultureInvariant);
+        DateOnlyRegex = new(@"^(\d{1,2})(\.(\d{1,2})(\.(\d{2,4}))?)$", RegexOptions.CultureInvariant);
 
     private static ReadOnlySpan<char> GetDayValue(this Match match)
         =>
