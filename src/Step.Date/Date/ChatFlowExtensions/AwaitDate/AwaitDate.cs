@@ -14,12 +14,27 @@ partial class AwaitDateChatFlowExtensions
         this ChatFlow<T> chatFlow,
         Func<IChatFlowContext<T>, DateStepOption> optionFactory,
         Func<IChatFlowContext<T>, DateOnly, string> resultMessageFactory,
+        Func<IChatFlowContext<T>, DateOnly, Result<DateOnly, BotFlowFailure>> validator,
         Func<T, DateOnly, T> mapFlowState)
         =>
         InnerAwaitDate(
             chatFlow ?? throw new ArgumentNullException(nameof(chatFlow)),
             optionFactory ?? throw new ArgumentNullException(nameof(chatFlow)),
             resultMessageFactory ?? throw new ArgumentNullException(nameof(resultMessageFactory)),
+            validator ?? throw new ArgumentNullException(nameof(validator)),
+            mapFlowState ?? throw new ArgumentNullException(nameof(mapFlowState)));
+
+    public static ChatFlow<T> AwaitDate<T>(
+        this ChatFlow<T> chatFlow,
+        Func<IChatFlowContext<T>, DateStepOption> optionFactory,
+        Func<IChatFlowContext<T>, DateOnly, string> resultMessageFactory,
+        Func<T, DateOnly, T> mapFlowState)
+        =>
+        InnerAwaitDate(
+            chatFlow ?? throw new ArgumentNullException(nameof(chatFlow)),
+            optionFactory ?? throw new ArgumentNullException(nameof(chatFlow)),
+            resultMessageFactory ?? throw new ArgumentNullException(nameof(resultMessageFactory)),
+            null,
             mapFlowState ?? throw new ArgumentNullException(nameof(mapFlowState)));
 
     public static ChatFlow<T> AwaitDate<T>(
@@ -31,21 +46,25 @@ partial class AwaitDateChatFlowExtensions
             chatFlow ?? throw new ArgumentNullException(nameof(chatFlow)),
             optionFactory ?? throw new ArgumentNullException(nameof(chatFlow)),
             CreateDefaultResultMessage,
+            null,
             mapFlowState ?? throw new ArgumentNullException(nameof(mapFlowState)));
 
-    public static ChatFlow<T> InnerAwaitDate<T>(
+    private static ChatFlow<T> InnerAwaitDate<T>(
         ChatFlow<T> chatFlow,
         Func<IChatFlowContext<T>, DateStepOption> optionFactory,
         Func<IChatFlowContext<T>, DateOnly, string> messageFactory,
-        Func<T, DateOnly, T> mapState)
+        Func<IChatFlowContext<T>, DateOnly, Result<DateOnly, BotFlowFailure>>? validator,
+        Func<T, DateOnly, T> mapFlowState)
     {
         return chatFlow.ForwardValue(InnerAwaitDateAsync);
 
         ValueTask<ChatFlowJump<T>> InnerAwaitDateAsync(IChatFlowContext<T> context, CancellationToken token)
             =>
             context.IsCardSupported()
-            ? context.InnerAwaitAsync(optionFactory, CreateDateAdaptiveCardActivity, ParseDateFormAdaptiveCard, messageFactory, mapState, token)
-            : context.InnerAwaitAsync(optionFactory, CreateMessageActivity, ParseDateFromText, messageFactory, mapState, token);
+            ? context.InnerAwaitAsync(
+                optionFactory, CreateDateAdaptiveCardActivity, ParseDateFormAdaptiveCard, validator, messageFactory, mapFlowState, token)
+            : context.InnerAwaitAsync(
+                optionFactory, CreateMessageActivity, ParseDateFromText, validator, messageFactory, mapFlowState, token);
     }
 
     private static async ValueTask<ChatFlowJump<T>> InnerAwaitAsync<T>(
@@ -53,6 +72,7 @@ partial class AwaitDateChatFlowExtensions
         Func<IChatFlowContext<T>, DateStepOption> optionFactory,
         Func<ITurnContext, DateStepOption, IActivity> activityFactory,
         Func<ITurnContext, DateCacheJson, Result<DateOnly, BotFlowFailure>> dateParser,
+        Func<IChatFlowContext<T>, DateOnly, Result<DateOnly, BotFlowFailure>>? validator,
         Func<IChatFlowContext<T>, DateOnly, string> resultMessageFactory,
         Func<T, DateOnly, T> mapFlowState,
         CancellationToken cancellationToken)
@@ -65,7 +85,11 @@ partial class AwaitDateChatFlowExtensions
 
         if (context.StepState is DateCacheJson cacheJson)
         {
-            return await dateParser.Invoke(context, cacheJson).FoldValueAsync(SuccessAsync, RepeatAsync).ConfigureAwait(false);
+            return await dateParser.Invoke(context, cacheJson).Forward(InnerValidate).FoldValueAsync(SuccessAsync, RepeatAsync).ConfigureAwait(false);
+
+            Result<DateOnly, BotFlowFailure> InnerValidate(DateOnly date)
+                =>
+                validator is null ? date : validator.Invoke(context, date);
         }
 
         var dateActivity = activityFactory.Invoke(context, option);
