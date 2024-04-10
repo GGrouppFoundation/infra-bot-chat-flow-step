@@ -4,18 +4,16 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Bot.Builder;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 
 namespace GarageGroup.Infra.Bot.Builder;
 
 public static partial class CardChatFlowExtensions
 {
-    private static ValueTask<ChatFlowJump<T>> GetWebAppConfirmationResultOrRepeatAsync<T, TWebAppDataJson>(
+    private static ValueTask<ChatFlowJump<T>> GetWebAppConfirmationResultOrRepeatAsync<T>(
         this IChatFlowContext<T> context,
-        Func<IChatFlowContext<T>, TWebAppDataJson, Result<T, BotFlowFailure>> forwardFlowState,
+        Func<IChatFlowContext<T>, string, Result<T, BotFlowFailure>> forwardFlowState,
         Func<T, ValueTask<ChatFlowJump<T>>> toNextAsync,
         CancellationToken cancellationToken)
-        where TWebAppDataJson : notnull
     {
         if (context.IsNotTelegramChannel())
         {
@@ -23,18 +21,12 @@ public static partial class CardChatFlowExtensions
         }
 
         var data = TelegramWebAppResponse.FromChannelData(context.Activity.ChannelData).Message?.WebAppData?.Data;
-        if (string.IsNullOrWhiteSpace(data))
+        if (string.IsNullOrEmpty(data))
         {
             return context.RepeatSameStateValueTask();
         }
 
-        var webAppData = JsonConvert.DeserializeObject<TWebAppDataJson>(data);
-        if (webAppData is null)
-        {
-            return context.RepeatSameStateValueTask();
-        }
-
-        return forwardFlowState.Invoke(context, webAppData).FoldValueAsync(toNextAsync, RepeatAsync);
+        return forwardFlowState.Invoke(context, data).FoldValueAsync(toNextAsync, RepeatAsync);
 
         async ValueTask<ChatFlowJump<T>> RepeatAsync(BotFlowFailure flowFailure)
         {

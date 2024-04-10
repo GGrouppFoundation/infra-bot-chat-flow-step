@@ -18,32 +18,30 @@ partial class CardChatFlowExtensions
 
         ValueTask<ChatFlowJump<T>> GetResultOrRepeatAsync(IChatFlowContext<T> context, CancellationToken token)
             =>
-            context.GetConfirmationResultOrRepeatAsync<T, object>(optionFactory, null, token);
+            context.GetConfirmationResultOrRepeatAsync(optionFactory, null, token);
     }
 
-    public static ChatFlow<T> AwaitConfirmation<T, TWebAppDataJson>(
+    public static ChatFlow<T> AwaitConfirmation<T>(
         this ChatFlow<T> chatFlow,
         Func<IChatFlowContext<T>, ConfirmationCardOption> optionFactory,
-        Func<IChatFlowContext<T>, TWebAppDataJson, Result<T, BotFlowFailure>> forwardFlowState)
-        where TWebAppDataJson : notnull
+        Func<IChatFlowContext<T>, string, Result<T, BotFlowFailure>> forwardTelegramWebAppData)
     {
         ArgumentNullException.ThrowIfNull(chatFlow);
         ArgumentNullException.ThrowIfNull(optionFactory);
-        ArgumentNullException.ThrowIfNull(forwardFlowState);
+        ArgumentNullException.ThrowIfNull(forwardTelegramWebAppData);
 
         return chatFlow.ForwardValue(GetResultOrRepeatAsync);
 
         ValueTask<ChatFlowJump<T>> GetResultOrRepeatAsync(IChatFlowContext<T> context, CancellationToken token)
             =>
-            context.GetConfirmationResultOrRepeatAsync(optionFactory, forwardFlowState, token);
+            context.GetConfirmationResultOrRepeatAsync(optionFactory, forwardTelegramWebAppData, token);
     }
 
-    private static async ValueTask<ChatFlowJump<T>> GetConfirmationResultOrRepeatAsync<T, TWebAppDataJson>(
+    private static async ValueTask<ChatFlowJump<T>> GetConfirmationResultOrRepeatAsync<T>(
         this IChatFlowContext<T> context,
         Func<IChatFlowContext<T>, ConfirmationCardOption> optionFactory,
-        Func<IChatFlowContext<T>, TWebAppDataJson, Result<T, BotFlowFailure>>? forwardFlowState,
+        Func<IChatFlowContext<T>, string, Result<T, BotFlowFailure>>? forwardTelegramWebAppData,
         CancellationToken cancellationToken)
-        where TWebAppDataJson : notnull
     {
         var option = optionFactory.Invoke(context);
         if (option.SkipStep)
@@ -83,9 +81,9 @@ partial class CardChatFlowExtensions
             return await ToBreakAsync().ConfigureAwait(false);
         }
 
-        if (forwardFlowState is not null && string.IsNullOrWhiteSpace(option.TelegramWebApp?.WebAppUrl) is false)
+        if (forwardTelegramWebAppData is not null && string.IsNullOrWhiteSpace(option.TelegramWebApp?.WebAppUrl) is false)
         {
-            return await context.GetWebAppConfirmationResultOrRepeatAsync(forwardFlowState, ToNextAsync, cancellationToken).ConfigureAwait(false);
+            return await context.GetWebAppConfirmationResultOrRepeatAsync(forwardTelegramWebAppData, ToNextAsync, cancellationToken).ConfigureAwait(false);
         }
 
         return await context.GetCardActionValueOrAbsent().FoldValueAsync(CheckButtonIdAsync, context.RepeatSameStateValueTask).ConfigureAwait(false);
