@@ -7,7 +7,9 @@ namespace GarageGroup.Infra.Bot.Builder;
 
 partial class CardChatFlowExtensions
 {
-    public static ChatFlow<T> AwaitConfirmation<T>(this ChatFlow<T> chatFlow, Func<IChatFlowContext<T>, ConfirmationCardOption> optionFactory)
+    public static ChatFlow<T> AwaitConfirmation<T>(
+        this ChatFlow<T> chatFlow,
+        Func<IChatFlowContext<T>, ConfirmationCardOption> optionFactory)
     {
         ArgumentNullException.ThrowIfNull(chatFlow);
         ArgumentNullException.ThrowIfNull(optionFactory);
@@ -16,13 +18,32 @@ partial class CardChatFlowExtensions
 
         ValueTask<ChatFlowJump<T>> GetResultOrRepeatAsync(IChatFlowContext<T> context, CancellationToken token)
             =>
-            context.GetConfirmationResultOrRepeatAsync(optionFactory, token);
+            context.GetConfirmationResultOrRepeatAsync<T, object>(optionFactory, null, token);
     }
 
-    private static async ValueTask<ChatFlowJump<T>> GetConfirmationResultOrRepeatAsync<T>(
+    public static ChatFlow<T> AwaitConfirmation<T, TWebAppDataJson>(
+        this ChatFlow<T> chatFlow,
+        Func<IChatFlowContext<T>, ConfirmationCardOption> optionFactory,
+        Func<IChatFlowContext<T>, TWebAppDataJson, Result<T, BotFlowFailure>> forwardFlowState)
+        where TWebAppDataJson : notnull
+    {
+        ArgumentNullException.ThrowIfNull(chatFlow);
+        ArgumentNullException.ThrowIfNull(optionFactory);
+        ArgumentNullException.ThrowIfNull(forwardFlowState);
+
+        return chatFlow.ForwardValue(GetResultOrRepeatAsync);
+
+        ValueTask<ChatFlowJump<T>> GetResultOrRepeatAsync(IChatFlowContext<T> context, CancellationToken token)
+            =>
+            context.GetConfirmationResultOrRepeatAsync(optionFactory, forwardFlowState, token);
+    }
+
+    private static async ValueTask<ChatFlowJump<T>> GetConfirmationResultOrRepeatAsync<T, TWebAppDataJson>(
         this IChatFlowContext<T> context,
         Func<IChatFlowContext<T>, ConfirmationCardOption> optionFactory,
+        Func<IChatFlowContext<T>, TWebAppDataJson, Result<T, BotFlowFailure>>? forwardFlowState,
         CancellationToken cancellationToken)
+        where TWebAppDataJson : notnull
     {
         var option = optionFactory.Invoke(context);
         if (option.SkipStep)
@@ -54,7 +75,7 @@ partial class CardChatFlowExtensions
 
         if (IsTextEqualTo(option.ConfirmButtonText))
         {
-            return await ToNextAsync().ConfigureAwait(false);
+            return await ToNextAsync(context.FlowState).ConfigureAwait(false);
         }
 
         if (IsTextEqualTo(option.CancelButtonText))
@@ -62,13 +83,18 @@ partial class CardChatFlowExtensions
             return await ToBreakAsync().ConfigureAwait(false);
         }
 
-        return await context.GetCardActionValueOrAbsent().FoldValueAsync(CheckButtonIdAsync, ToRepeatAsync).ConfigureAwait(false);
+        if (forwardFlowState is not null && string.IsNullOrWhiteSpace(option.TelegramWebApp?.WebAppUrl) is false)
+        {
+            return await context.GetWebAppConfirmationResultOrRepeatAsync(forwardFlowState, ToNextAsync, cancellationToken).ConfigureAwait(false);
+        }
+
+        return await context.GetCardActionValueOrAbsent().FoldValueAsync(CheckButtonIdAsync, context.RepeatSameStateValueTask).ConfigureAwait(false);
 
         ValueTask<ChatFlowJump<T>> CheckButtonIdAsync(Guid buttonId)
         {
             if (buttonId == cacheJson.ConfirmButtonGuid)
             {
-                return ToNextAsync();
+                return ToNextAsync(context.FlowState);
             }
 
             if (buttonId == cacheJson.CancelButtonGuid)
@@ -76,40 +102,37 @@ partial class CardChatFlowExtensions
                 return ToBreakAsync();
             }
 
-            return ToRepeatAsync();
+            return context.RepeatSameStateValueTask();
         }
 
-        async ValueTask<ChatFlowJump<T>> ToNextAsync()
+        async ValueTask<ChatFlowJump<T>> ToNextAsync(T value)
         {
             if (cacheJson.Resource is not null)
             {
                 await UpdateResourceAsync(cacheJson.Resource).ConfigureAwait(false);
             }
-            return context.FlowState;
-        }
 
-        ValueTask<ChatFlowJump<T>> ToRepeatAsync()
-            =>
-            new(context.RepeatSameStateJump<T>());
+            return value;
+        }
 
         async ValueTask<ChatFlowJump<T>> ToBreakAsync()
         {
             if (cacheJson.Resource is null)
             {
-                await SendCancelTextAsync().ConfigureAwait(false);
+                await SendCancellationTextAsync().ConfigureAwait(false);
             }
             else
             {
-                await Task.WhenAll(UpdateResourceAsync(cacheJson.Resource), SendCancelTextAsync()).ConfigureAwait(false);
+                await Task.WhenAll(UpdateResourceAsync(cacheJson.Resource), SendCancellationTextAsync()).ConfigureAwait(false);
             }
 
             return ChatFlowBreakState.From(null);
         }
 
-        Task SendCancelTextAsync()
+        Task SendCancellationTextAsync()
         {
-            var cancelActivity = context.CreateCancelActivity(option.CancelText);
-            return context.SendActivityAsync(cancelActivity, cancellationToken);
+            var cancellationActivity = context.CreateCancellationActivity(option.CancelText);
+            return context.SendActivityAsync(cancellationActivity, cancellationToken);
         }
 
         Task UpdateResourceAsync(ResourceResponse resource)

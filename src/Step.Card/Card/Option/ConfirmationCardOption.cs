@@ -21,10 +21,10 @@ public sealed record class ConfirmationCardOption
         [AllowNull] string cancelText = DefaultCancelText,
         FlatArray<KeyValuePair<string, string?>> fieldValues = default)
     {
-        QuestionText = string.IsNullOrEmpty(questionText) ? DefaultQuestionText : questionText;
-        ConfirmButtonText = string.IsNullOrEmpty(confirmButtonText) ? DefaultConfirmButtonText : confirmButtonText;
-        CancelButtonText = string.IsNullOrEmpty(cancelButtonText) ? DefaultCancelButtonText : cancelButtonText;
-        CancelText = string.IsNullOrEmpty(cancelText) ? DefaultCancelText : cancelText;
+        QuestionText = questionText.OrNullIfWhiteSpace() ?? DefaultQuestionText;
+        ConfirmButtonText = confirmButtonText.OrNullIfWhiteSpace() ?? DefaultConfirmButtonText;
+        CancelButtonText = cancelButtonText.OrNullIfWhiteSpace() ?? DefaultCancelButtonText;
+        CancelText = cancelText.OrNullIfWhiteSpace() ?? DefaultCancelText;
         FieldValues = fieldValues;
     }
 
@@ -37,6 +37,8 @@ public sealed record class ConfirmationCardOption
     public string CancelText { get; }
 
     public FlatArray<KeyValuePair<string, string?>> FieldValues { get; }
+
+    public ConfirmationTelegramWebAppOption? TelegramWebApp { get; init; }
 
     public bool SkipStep { get; init; }
 }

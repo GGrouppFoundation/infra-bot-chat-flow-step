@@ -6,7 +6,7 @@ namespace GarageGroup.Infra.Bot.Builder;
 
 partial class CardActivity
 {
-    internal static IActivity CreateCancelActivity(this ITurnContext context, string text)
+    internal static IActivity CreateCancellationActivity(this ITurnContext context, string text)
     {
         if (context.IsNotTelegramChannel())
         {

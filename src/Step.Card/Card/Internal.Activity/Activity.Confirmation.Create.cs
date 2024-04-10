@@ -59,8 +59,7 @@ partial class CardActivity
     private static List<AdaptiveAction> CreateAdaptiveCardActivityActions(
         this ITurnContext context, ConfirmationCardOption option, ConfirmationCardCacheJson cache)
         =>
-        new()
-        {
+        [
             new AdaptiveSubmitAction
             {
                 Title = option.ConfirmButtonText,
@@ -71,23 +70,16 @@ partial class CardActivity
                 Title = option.CancelButtonText,
                 Data = context.BuildCardActionValue(cache.CancelButtonGuid)
             }
-        };
+        ];
 
     private static JObject CreateTelegramChannelData(ConfirmationCardOption option)
-        =>
-        new TelegramChannelData(
-            parameters: new(BuildTelegramText(option))
+    {
+        return new TelegramChannelData(
+            parameters: new(option.BuildTelegramText())
             {
                 ParseMode = TelegramParseMode.Html,
                 ReplyMarkup = new TelegramReplyKeyboardMarkup(
-                    keyboard: new[]
-                    {
-                        new TelegramKeyboardButton[]
-                        {
-                            new(option.CancelButtonText),
-                            new(option.ConfirmButtonText)
-                        }
-                    })
+                    keyboard: InnerGetButtons(option).ToArray())
                 {
                     ResizeKeyboard = true,
                     OneTimeKeyboard = true,
@@ -95,6 +87,29 @@ partial class CardActivity
                 }
             })
         .ToJObject();
+
+        static IEnumerable<TelegramKeyboardButton[]> InnerGetButtons(ConfirmationCardOption option)
+        {
+            yield return
+            [
+                new(option.CancelButtonText),
+                new(option.ConfirmButtonText)
+            ];
+
+            if (string.IsNullOrWhiteSpace(option.TelegramWebApp?.WebAppUrl))
+            {
+                yield break;
+            }
+
+            yield return
+            [
+                new(option.TelegramWebApp.ButtonName)
+                {
+                    WebApp = new(option.TelegramWebApp.WebAppUrl)
+                }
+            ];
+        }
+    }
 
     private static IActivity CreateHeroCardConfirmationActivity(
         this ITurnContext context, ConfirmationCardOption option, ConfirmationCardCacheJson cache, bool useButtons)

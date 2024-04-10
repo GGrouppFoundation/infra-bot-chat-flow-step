@@ -14,7 +14,7 @@ internal static partial class CardActivity
         return body;
     }
 
-    private static string BuildTelegramText(ConfirmationCardOption option)
+    private static string BuildTelegramText(this ConfirmationCardOption option)
         =>
         new StringBuilder(
             $"<b>{HttpUtility.HtmlEncode(option.QuestionText)}</b>")
