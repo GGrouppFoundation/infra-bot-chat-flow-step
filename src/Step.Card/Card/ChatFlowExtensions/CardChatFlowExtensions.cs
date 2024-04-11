@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Bot.Builder;
 using Microsoft.Extensions.Logging;
 
 namespace GarageGroup.Infra.Bot.Builder;
@@ -26,19 +25,18 @@ public static partial class CardChatFlowExtensions
             return context.RepeatSameStateJump();
         }
 
-        var taskDeletion = context.DeleteActivityAsync(context.Activity.Id, cancellationToken);
-        var taskFlowState = forwardFlowState.Invoke(context, data).FoldValueAsync(toNextAsync, RepeatAsync).AsTask();
+        var deletionTask = context.DeleteActivityAsync(context.Activity.Id, cancellationToken);
+        var flowStateTask = forwardFlowState.Invoke(context, data).FoldValueAsync(toNextAsync, RepeatAsync).AsTask();
 
-        await Task.WhenAll(taskDeletion, taskFlowState).ConfigureAwait(false);
-
-        return taskFlowState.Result;
+        await Task.WhenAll(deletionTask, flowStateTask).ConfigureAwait(false);
+        return flowStateTask.Result;
 
         async ValueTask<ChatFlowJump<T>> RepeatAsync(BotFlowFailure flowFailure)
         {
             if (string.IsNullOrEmpty(flowFailure.UserMessage) is false)
             {
-                var invalidDateActivity = MessageFactory.Text(flowFailure.UserMessage);
-                _ = await context.SendActivityAsync(invalidDateActivity, cancellationToken).ConfigureAwait(false);
+                var invalidDataActivity = context.CreateInvalidDataActivity(flowFailure.UserMessage);
+                _ = await context.SendActivityAsync(invalidDataActivity, cancellationToken).ConfigureAwait(false);
             }
 
             if (string.IsNullOrEmpty(flowFailure.LogMessage) is false || flowFailure.SourceException is not null)

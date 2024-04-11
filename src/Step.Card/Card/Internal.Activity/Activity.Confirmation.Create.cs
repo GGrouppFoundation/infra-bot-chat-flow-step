@@ -4,7 +4,6 @@ using System.Text;
 using AdaptiveCards;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Schema;
-using Newtonsoft.Json.Linq;
 
 namespace GarageGroup.Infra.Bot.Builder;
 
@@ -21,7 +20,8 @@ partial class CardActivity
         if (context.IsTelegramChannel())
         {
             var telegramActivity = MessageFactory.Text(default);
-            telegramActivity.ChannelData = CreateTelegramChannelData(option);
+            telegramActivity.ChannelData = CreateTelegramChannelData(option, useButtons).ToJObject();
+
             return telegramActivity;
         }
 
@@ -72,21 +72,20 @@ partial class CardActivity
             }
         ];
 
-    private static JObject CreateTelegramChannelData(ConfirmationCardOption option)
+    private static TelegramChannelData CreateTelegramChannelData(ConfirmationCardOption option, bool useButtons)
     {
-        return new TelegramChannelData(
+        return new(
             parameters: new(option.BuildTelegramText())
             {
                 ParseMode = TelegramParseMode.Html,
-                ReplyMarkup = new TelegramReplyKeyboardMarkup(
+                ReplyMarkup = useButtons is false ? null : new TelegramReplyKeyboardMarkup(
                     keyboard: InnerGetButtons(option).ToArray())
                 {
                     ResizeKeyboard = true,
                     OneTimeKeyboard = true,
                     InputFieldPlaceholder = option.QuestionText
                 }
-            })
-        .ToJObject();
+            });
 
         static IEnumerable<TelegramKeyboardButton[]> InnerGetButtons(ConfirmationCardOption option)
         {
@@ -125,8 +124,7 @@ partial class CardActivity
     private static IList<CardAction> CreateHeroCardConfirmationButtons(
         this ITurnContext context, ConfirmationCardOption option, ConfirmationCardCacheJson cache)
         =>
-        new CardAction[]
-        {
+        [
             new(ActionTypes.PostBack)
             {
                 Title = option.ConfirmButtonText,
@@ -139,7 +137,7 @@ partial class CardActivity
                 Text = option.CancelButtonText,
                 Value = context.BuildCardActionValue(cache.CancelButtonGuid)
             }
-        };
+        ];
 
     private static IActivity ToCardActivity(this HeroCard card, string? fieldsText)
         =>

@@ -83,7 +83,8 @@ partial class CardChatFlowExtensions
 
         if (forwardTelegramWebAppData is not null && string.IsNullOrWhiteSpace(option.TelegramWebApp?.WebAppUrl) is false)
         {
-            return await context.GetWebAppConfirmationResultOrRepeatAsync(forwardTelegramWebAppData, ToNextAsync, cancellationToken).ConfigureAwait(false);
+            return await context.GetWebAppConfirmationResultOrRepeatAsync(
+                forwardTelegramWebAppData, ToNextAsync, cancellationToken).ConfigureAwait(false);
         }
 
         return await context.GetCardActionValueOrAbsent().FoldValueAsync(CheckButtonIdAsync, context.RepeatSameStateValueTask).ConfigureAwait(false);
@@ -136,8 +137,7 @@ partial class CardChatFlowExtensions
         Task UpdateResourceAsync(ResourceResponse resource)
         {
             var activity = context.CreateConfirmationActivity(option, cacheJson, false);
-            activity.Id = resource.Id;
-            return context.UpdateActivityAsync(activity, cancellationToken);
+            return context.ReplaceActivityAsync(resource.Id, activity, cancellationToken);
         }
 
         bool IsTextEqualTo(string buttonText)

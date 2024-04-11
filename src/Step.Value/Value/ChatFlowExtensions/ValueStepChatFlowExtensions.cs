@@ -37,13 +37,12 @@ public static partial class ValueStepChatFlowExtensions
     }
 
     private static async ValueTask<ChatFlowJump<T>> ToRepeatJumpAsync<T, TValue>(
-        this IChatFlowStepContext<T> context, string chatFlowId, BotFlowFailure failure, CancellationToken token)
+        this IChatFlowStepContext<T> context, string chatFlowId, BotFlowFailure failure, CancellationToken cancellationToken)
     {
-        var userMessage = failure.UserMessage;
-        if (string.IsNullOrEmpty(userMessage) is false)
+        if (string.IsNullOrEmpty(failure.UserMessage) is false)
         {
-            var activity = MessageFactory.Text(userMessage);
-            _ = await context.SendActivityAsync(activity, token).ConfigureAwait(false);
+            var activity = context.CreateTextActivity(failure.UserMessage);
+            _ = await context.SendActivityAsync(activity, cancellationToken).ConfigureAwait(false);
         }
 
         var logMessage = failure.LogMessage;
@@ -112,6 +111,27 @@ public static partial class ValueStepChatFlowExtensions
         Task DeleteActivityAsync()
             =>
             context.DeleteActivityAsync(activityId, token);
+    }
+
+    private static Activity CreateTextActivity(this ITurnContext context, string text)
+    {
+        if (context.IsNotTelegramChannel())
+        {
+            return MessageFactory.Text(text);
+        }
+
+        var telegramActivity = MessageFactory.Text(default);
+        telegramActivity.ChannelData = BuildTelegramChannelData(text).ToJObject();
+
+        return telegramActivity;
+
+        static TelegramChannelData BuildTelegramChannelData(string text)
+            =>
+            new(
+                parameters: new(text)
+                {
+                    ParseMode = TelegramParseMode.Html
+                });
     }
 
     private static string CreateDefaultResultMessage<T, TValue>(IChatFlowContext<T> context, TValue value)

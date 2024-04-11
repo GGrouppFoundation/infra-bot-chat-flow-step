@@ -123,7 +123,7 @@ partial class AwaitDateChatFlowExtensions
         {
             if (string.IsNullOrEmpty(flowFailure.UserMessage) is false)
             {
-                var invalidDateActivity = MessageFactory.Text(flowFailure.UserMessage);
+                var invalidDateActivity = context.CreateTextActivity(flowFailure.UserMessage);
                 await context.SendActivityAsync(invalidDateActivity, cancellationToken).ConfigureAwait(false);
             }
 
@@ -170,5 +170,26 @@ partial class AwaitDateChatFlowExtensions
     {
         var text = context.EncodeTextWithStyle(date.ToString("dd.MM.yyyy"), BotTextStyle.Bold);
         return $"Выбрано значение: {text}";
+    }
+
+    private static Activity CreateTextActivity(this ITurnContext context, string text)
+    {
+        if (context.IsNotTelegramChannel())
+        {
+            return MessageFactory.Text(text);
+        }
+
+        var telegramActivity = MessageFactory.Text(default);
+        telegramActivity.ChannelData = BuildTelegramChannelData(text).ToJObject();
+
+        return telegramActivity;
+
+        static TelegramChannelData BuildTelegramChannelData(string text)
+            =>
+            new(
+                parameters: new(text)
+                {
+                    ParseMode = TelegramParseMode.Html
+                });
     }
 }

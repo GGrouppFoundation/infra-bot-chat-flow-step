@@ -15,10 +15,12 @@ public sealed record class ValueStepOption<TValue>
         [AllowNull] IReadOnlyCollection<IReadOnlyCollection<KeyValuePair<string, TValue>>> suggestions = default)
     {
         this.messageText = messageText.OrNullIfEmpty();
-        Suggestions = suggestions ?? Array.Empty<IReadOnlyCollection<KeyValuePair<string, TValue>>>();
+        Suggestions = suggestions ?? [];
     }
 
-    public string MessageText => messageText ?? DefaultMessageText;
+    public string MessageText
+        =>
+        messageText ?? DefaultMessageText;
 
     public IReadOnlyCollection<IReadOnlyCollection<KeyValuePair<string, TValue>>> Suggestions { get; }
 
