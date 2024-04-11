@@ -9,7 +9,7 @@ namespace GarageGroup.Infra.Bot.Builder;
 
 public static partial class CardChatFlowExtensions
 {
-    private static ValueTask<ChatFlowJump<T>> GetWebAppConfirmationResultOrRepeatAsync<T>(
+    private static async ValueTask<ChatFlowJump<T>> GetWebAppConfirmationResultOrRepeatAsync<T>(
         this IChatFlowContext<T> context,
         Func<IChatFlowContext<T>, string, Result<T, BotFlowFailure>> forwardFlowState,
         Func<T, ValueTask<ChatFlowJump<T>>> toNextAsync,
@@ -17,16 +17,21 @@ public static partial class CardChatFlowExtensions
     {
         if (context.IsNotTelegramChannel())
         {
-            return context.RepeatSameStateValueTask();
+            return context.RepeatSameStateJump();
         }
 
         var data = TelegramWebAppResponse.FromChannelData(context.Activity.ChannelData).Message?.WebAppData?.Data;
         if (string.IsNullOrEmpty(data))
         {
-            return context.RepeatSameStateValueTask();
+            return context.RepeatSameStateJump();
         }
 
-        return forwardFlowState.Invoke(context, data).FoldValueAsync(toNextAsync, RepeatAsync);
+        var taskDeletion = context.DeleteActivityAsync(context.Activity.Id, cancellationToken);
+        var taskFlowState = forwardFlowState.Invoke(context, data).FoldValueAsync(toNextAsync, RepeatAsync).AsTask();
+
+        await Task.WhenAll(taskDeletion, taskFlowState).ConfigureAwait(false);
+
+        return taskFlowState.Result;
 
         async ValueTask<ChatFlowJump<T>> RepeatAsync(BotFlowFailure flowFailure)
         {

@@ -8,7 +8,7 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <RootNamespace>GarageGroup.Infra.Bot.Builder</RootNamespace>
     <AssemblyName>GarageGroup.Infra.Bot.Builder.ChatFlow.Step.Card</AssemblyName>
-    <Version>0.3.0-build.5</Version>
+    <Version>0.3.0-build.6</Version>
   </PropertyGroup>
 
   <ItemGroup>
