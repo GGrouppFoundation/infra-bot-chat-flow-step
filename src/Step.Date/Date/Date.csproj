@@ -8,12 +8,12 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <RootNamespace>GarageGroup.Infra.Bot.Builder</RootNamespace>
     <AssemblyName>GarageGroup.Infra.Bot.Builder.ChatFlow.Step.Date</AssemblyName>
-    <Version>0.4.0-build.1</Version>
+    <Version>0.4.0-build.3</Version>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="AdaptiveCards" Version="3.1.0" />
-    <PackageReference Include="GarageGroup.Infra.Bot.Builder.ChatFlow.Core" Version="0.2.0" />
+    <PackageReference Include="GarageGroup.Infra.Bot.Builder.ChatFlow.Core" Version="0.3.0-build.6" />
     <PackageReference Include="GarageGroup.Infra.Bot.Builder.FlowFailure" Version="0.1.1" />
     <PackageReference Include="GarageGroup.Infra.Bot.Builder.Telegram.ChannelData" Version="0.2.0" />
     <PackageReference Include="GarageGroup.Infra.Bot.Builder.TurnContext.Extensions" Version="1.1.0" />

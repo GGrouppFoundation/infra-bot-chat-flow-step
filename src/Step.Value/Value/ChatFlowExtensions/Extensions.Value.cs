@@ -86,8 +86,7 @@ partial class ValueStepChatFlowExtensions
             return context.SendSuggestionsActivityAsync(option, cancellationToken);
         }
 
-        var textJump = context.GetTextValueOrAbsent(cache.Suggestions).Fold(ChatFlowJump.Next, context.RepeatSameStateJump<string>);
-        return textJump.ForwardValueAsync(ParseAsync);
+        return context.GetTextValueOrAbsent(cache.Suggestions).FoldValueAsync(ParseAsync, RepeatSameStateJumpAsync);
 
         ValueTask<ChatFlowJump<T>> ParseAsync(string text)
         {
@@ -109,5 +108,9 @@ partial class ValueStepChatFlowExtensions
         ValueTask<ChatFlowJump<T>> ToRepeatJumpAsync(BotFlowFailure failure)
             =>
             context.ToRepeatJumpAsync<T, TValue>(context.ChatFlowId, failure, cancellationToken);
+
+        ValueTask<ChatFlowJump<T>> RepeatSameStateJumpAsync()
+            =>
+            new(context.RepeatSameStateJump());
     }
 }

@@ -56,11 +56,11 @@ public static partial class CardChatFlowExtensions
                 context.BotTelemetryClient.TrackEvent($"{context.ChatFlowId}StepAwaitConfirmation", properties);
             }
 
-            return context.RepeatSameStateJump<T>();
+            return context.RepeatSameStateJump();
         }
     }
 
     private static ValueTask<ChatFlowJump<T>> RepeatSameStateValueTask<T>(this IChatFlowContext<T> context)
         =>
-        new(context.RepeatSameStateJump<T>());
+        new(context.RepeatSameStateJump());
 }

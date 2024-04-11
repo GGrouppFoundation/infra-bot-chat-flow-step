@@ -147,7 +147,7 @@ partial class AwaitDateChatFlowExtensions
                 context.BotTelemetryClient.TrackEvent($"{context.ChatFlowId}StepAwaitDateFailure", properties);
             }
 
-            return context.RepeatSameStateJump<T>();
+            return context.RepeatSameStateJump();
         }
     }
 

@@ -5,20 +5,20 @@ namespace GarageGroup.Infra.Bot.Builder;
 partial class LookupActivity
 {
     internal static ChatFlowJump<T> ToRepeatWithLookupCacheJump<T>(
-        this IStepStateSupplier context, ResourceResponse resource, LookupValueSetOption option)
+        this IStepStateSupplier<T> context, ResourceResponse resource, LookupValueSetOption option)
     {
         var cache = context.StepState as LookupCacheJson ?? new();
 
         if (cache.Resources is null)
         {
-            cache.Resources = new() { resource };
+            cache.Resources = [resource];
         }
         else
         {
             cache.Resources.Add(resource);
         }
 
-        cache.Values ??= new();
+        cache.Values ??= [];
 
         foreach (var lookupValue in option.Items)
         {

@@ -82,7 +82,7 @@ partial class LookupStepChatFlowExtensions
         var searchText = context.Activity.Text;
         if (context.IsNotMessageType() || string.IsNullOrEmpty(searchText))
         {
-            return context.RepeatSameStateJump<T>(default);
+            return context.RepeatSameStateJump();
         }
 
         await context.SetTypingStatusAsync(token).ConfigureAwait(false);
@@ -132,7 +132,7 @@ partial class LookupStepChatFlowExtensions
                 context.BotTelemetryClient.TrackEvent($"{context.ChatFlowId}StepLookupFailure", properties);
             }
 
-            return context.RepeatSameStateJump<T>(default);
+            return context.RepeatSameStateJump();
         }
 
         async ValueTask<ChatFlowJump<T>> NextAsync(LookupCacheResult cacheResult)
@@ -144,6 +144,6 @@ partial class LookupStepChatFlowExtensions
 
         ValueTask<ChatFlowJump<T>> RepeatAsync()
             =>
-            new(context.RepeatSameStateJump<T>());
+            new(context.RepeatSameStateJump());
     }
 }

@@ -37,7 +37,7 @@ public static partial class ValueStepChatFlowExtensions
     }
 
     private static async ValueTask<ChatFlowJump<T>> ToRepeatJumpAsync<T, TValue>(
-        this IChatFlowStepContext context, string chatFlowId, BotFlowFailure failure, CancellationToken token)
+        this IChatFlowStepContext<T> context, string chatFlowId, BotFlowFailure failure, CancellationToken token)
     {
         var userMessage = failure.UserMessage;
         if (string.IsNullOrEmpty(userMessage) is false)

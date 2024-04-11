@@ -5,7 +5,7 @@ namespace GarageGroup.Infra.Bot.Builder;
 
 partial class LookupActivity
 {
-    internal static Optional<LookupCacheResult> GetFromLookupCacheOrAbsent(this IStepStateSupplier flowContext, Guid id)
+    internal static Optional<LookupCacheResult> GetFromLookupCacheOrAbsent<T>(this IStepStateSupplier<T> flowContext, Guid id)
     {
         return GetLookupCacheOrAbsent().FlatMap(GetLookupValueOrAbsent);
 
