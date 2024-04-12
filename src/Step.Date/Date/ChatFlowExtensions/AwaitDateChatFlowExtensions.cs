@@ -30,7 +30,9 @@ public static partial class AwaitDateChatFlowExtensions
     {
         return cache.Suggestions?.GetValueOrAbsent(text).Map(ParseJsonDate) ?? default;
 
-        static DateOnly ParseJsonDate(string value) => DateOnly.ParseExact(value, JsonDateFormat);
+        static DateOnly ParseJsonDate(string value)
+            =>
+            DateOnly.ParseExact(value, JsonDateFormat);
     }
 
     private static DateCacheJson BuildCacheValue(DateStepOption option, ResourceResponse? resource)

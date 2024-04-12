@@ -13,13 +13,16 @@ partial class ValueStepChatFlowExtensions
         Func<string, Result<TValue, BotFlowFailure>> valueParser,
         Func<IChatFlowContext<T>, TValue, string> resultMessageFactory,
         Func<T, TValue, T> mapFlowState)
-        =>
-        InnerAwaitValue(
-            chatFlow ?? throw new ArgumentNullException(nameof(chatFlow)),
-            optionFactory ?? throw new ArgumentNullException(nameof(optionFactory)),
-            valueParser ?? throw new ArgumentNullException(nameof(valueParser)),
-            resultMessageFactory ?? throw new ArgumentNullException(nameof(resultMessageFactory)),
-            mapFlowState ?? throw new ArgumentNullException(nameof(mapFlowState)));
+    {
+        ArgumentNullException.ThrowIfNull(chatFlow);
+        ArgumentNullException.ThrowIfNull(optionFactory);
+
+        ArgumentNullException.ThrowIfNull(valueParser);
+        ArgumentNullException.ThrowIfNull(resultMessageFactory);
+        ArgumentNullException.ThrowIfNull(mapFlowState);
+
+        return InnerAwaitValue(chatFlow, optionFactory, valueParser, resultMessageFactory, mapFlowState);
+    }
 
     public static ChatFlow<T> AwaitValue<T, TValue>(
         this ChatFlow<T> chatFlow,
@@ -28,12 +31,12 @@ partial class ValueStepChatFlowExtensions
         Func<IChatFlowContext<T>, TValue, string> resultMessageFactory,
         Func<T, TValue, T> mapFlowState)
     {
-        _ = chatFlow ?? throw new ArgumentNullException(nameof(chatFlow));
-        _ = optionFactory ?? throw new ArgumentNullException(nameof(optionFactory));
-        _ = valueParser ?? throw new ArgumentNullException(nameof(valueParser));
+        ArgumentNullException.ThrowIfNull(chatFlow);
+        ArgumentNullException.ThrowIfNull(optionFactory);
 
-        _ = resultMessageFactory ?? throw new ArgumentNullException(nameof(resultMessageFactory));
-        _ = mapFlowState ?? throw new ArgumentNullException(nameof(mapFlowState));
+        ArgumentNullException.ThrowIfNull(valueParser);
+        ArgumentNullException.ThrowIfNull(resultMessageFactory);
+        ArgumentNullException.ThrowIfNull(mapFlowState);
 
         return InnerAwaitValue(chatFlow, CreateOption, valueParser, resultMessageFactory, mapFlowState);
 
@@ -45,13 +48,15 @@ partial class ValueStepChatFlowExtensions
         Func<IChatFlowContext<T>, ValueStepOption<TValue>> optionFactory,
         Func<string, Result<TValue, BotFlowFailure>> valueParser,
         Func<T, TValue, T> mapFlowState)
-        =>
-        InnerAwaitValue(
-            chatFlow ?? throw new ArgumentNullException(nameof(chatFlow)),
-            optionFactory ?? throw new ArgumentNullException(nameof(optionFactory)),
-            valueParser ?? throw new ArgumentNullException(nameof(valueParser)),
-            CreateDefaultResultMessage,
-            mapFlowState ?? throw new ArgumentNullException(nameof(mapFlowState)));
+    {
+        ArgumentNullException.ThrowIfNull(chatFlow);
+        ArgumentNullException.ThrowIfNull(optionFactory);
+
+        ArgumentNullException.ThrowIfNull(valueParser);
+        ArgumentNullException.ThrowIfNull(mapFlowState);
+
+        return InnerAwaitValue(chatFlow, optionFactory, valueParser, CreateDefaultResultMessage, mapFlowState);
+    }
 
     private static ChatFlow<T> InnerAwaitValue<T, TValue>(
         ChatFlow<T> chatFlow,
@@ -86,8 +91,7 @@ partial class ValueStepChatFlowExtensions
             return context.SendSuggestionsActivityAsync(option, cancellationToken);
         }
 
-        var textJump = context.GetTextValueOrAbsent(cache.Suggestions).Fold(ChatFlowJump.Next, context.RepeatSameStateJump<string>);
-        return textJump.ForwardValueAsync(ParseAsync);
+        return context.GetTextValueOrAbsent(cache.Suggestions).FoldValueAsync(ParseAsync, RepeatSameStateJumpAsync);
 
         ValueTask<ChatFlowJump<T>> ParseAsync(string text)
         {
@@ -109,5 +113,9 @@ partial class ValueStepChatFlowExtensions
         ValueTask<ChatFlowJump<T>> ToRepeatJumpAsync(BotFlowFailure failure)
             =>
             context.ToRepeatJumpAsync<T, TValue>(context.ChatFlowId, failure, cancellationToken);
+
+        ValueTask<ChatFlowJump<T>> RepeatSameStateJumpAsync()
+            =>
+            new(context.RepeatSameStateJump());
     }
 }

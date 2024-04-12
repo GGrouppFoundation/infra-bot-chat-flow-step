@@ -68,7 +68,7 @@ partial class LookupStepChatFlowExtensions
 
         ValueTask<ChatFlowJump<T>> RepeatAsync()
             =>
-            new(context.RepeatSameStateJump<T>());
+            new(context.RepeatSameStateJump());
 
         async ValueTask<ChatFlowJump<T>> NextAsync(LookupCacheResult cacheResult)
         {

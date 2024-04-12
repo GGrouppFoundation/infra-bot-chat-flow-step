@@ -3,7 +3,6 @@ using System.Web;
 using AdaptiveCards;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Schema;
-using Newtonsoft.Json.Linq;
 
 namespace GarageGroup.Infra.Bot.Builder;
 
@@ -14,7 +13,7 @@ partial class LookupActivity
         if (context.IsTelegramChannel())
         {
             var telegramReply = MessageFactory.Text(default);
-            telegramReply.ChannelData = CreateTelegramChannelData(context, option);
+            telegramReply.ChannelData = CreateTelegramChannelData(context, option).ToJObject();
 
             return telegramReply;
         }
@@ -34,15 +33,15 @@ partial class LookupActivity
             ContentType = AdaptiveCard.ContentType,
             Content = new AdaptiveCard(context.GetAdaptiveSchemaVersion())
             {
-                Body = new()
-                {
+                Body =
+                [
                     new AdaptiveTextBlock
                     {
                         Text = option.ChoiceText,
                         Weight = AdaptiveTextWeight.Bolder,
                         Wrap = true
                     }
-                },
+                ],
                 Actions = option.Items.AsEnumerable().Select(context.CreateAdaptiveSubmitAction).ToList<AdaptiveAction>()
             }
         }
@@ -81,30 +80,29 @@ partial class LookupActivity
             Value = value
         };
 
-    private static JObject CreateTelegramChannelData(ITurnContext context, LookupValueSetOption option)
+    private static TelegramChannelData CreateTelegramChannelData(ITurnContext context, LookupValueSetOption option)
         =>
-        new TelegramChannelData(
+        new(
             parameters: new(HttpUtility.HtmlEncode(option.ChoiceText))
             {
                 ParseMode = TelegramParseMode.Html,
                 ReplyMarkup = new TelegramInlineKeyboardMarkup(
                     keyboard: CreateTelegramKeyboard(context, option))
-            })
-        .ToJObject();
+            });
 
     private static TelegramInlineKeyboardButton[][] CreateTelegramKeyboard(ITurnContext context, LookupValueSetOption option)
     {
         var buttons = option.Items.AsEnumerable().Select(context.CreateTelegramButton);
         if (option.Direction is LookupValueSetDirection.Horizon)
         {
-            return new[] { buttons.ToArray() };
+            return [buttons.ToArray()];
         }
-        
+
         return buttons.Select(CreateRow).ToArray();
 
         static TelegramInlineKeyboardButton[] CreateRow(TelegramInlineKeyboardButton button)
             =>
-            new[] { button };
+            [button];
     }
 
     private static TelegramInlineKeyboardButton CreateTelegramButton(this ITurnContext context, LookupValue item)
