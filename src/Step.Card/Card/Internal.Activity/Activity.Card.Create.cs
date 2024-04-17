@@ -72,7 +72,7 @@ partial class CardActivity
             parameters: new(option.BuildTelegramText())
             {
                 ParseMode = TelegramParseMode.Html,
-                ReplyMarkup = buttons is null ? null : new TelegramReplyKeyboardMarkup(
+                ReplyMarkup = buttons is null ? new TelegramReplyKeyboardRemove() : new TelegramReplyKeyboardMarkup(
                     keyboard: InnerGetButtons(buttons).ToArray())
                 {
                     ResizeKeyboard = true,
