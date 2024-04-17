@@ -2,11 +2,11 @@
 
 namespace GarageGroup.Infra.Bot.Builder;
 
-public sealed record class ConfirmationTelegramWebAppOption
+public sealed record class CardTelegramWebAppOption
 {
     private const string DefaultButtonName = "Редактировать";
 
-    public ConfirmationTelegramWebAppOption(string webAppUrl, string buttonName = DefaultButtonName)
+    public CardTelegramWebAppOption(string webAppUrl, string buttonName = DefaultButtonName)
     {
         WebAppUrl = webAppUrl.OrEmpty();
         ButtonName = buttonName.OrNullIfWhiteSpace() ?? DefaultButtonName;

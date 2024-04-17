@@ -54,6 +54,17 @@ jobs:
     - name: Pack Lookup.csproj
       run: dotnet pack ./src/*/*/Lookup.csproj --no-restore -o ~/nuget  -c Release
 
+    # Choice.csproj
+
+    - name: Restore Choice.csproj
+      run: dotnet restore ./src/*/*/Choice.csproj
+
+    - name: Build Choice.csproj
+      run: dotnet build ./src/*/*/Choice.csproj --no-restore  -c Release
+
+    - name: Pack Choice.csproj
+      run: dotnet pack ./src/*/*/Choice.csproj --no-restore -o ~/nuget  -c Release
+
     # Date.csproj
 
     - name: Restore Date.csproj

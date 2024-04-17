@@ -5,24 +5,19 @@ namespace GarageGroup.Infra.Bot.Builder;
 
 partial class CardActivity
 {
-    internal static IActivity CreateInvalidDataActivity(this ITurnContext context, string text)
+    internal static Activity CreateInvalidDataActivity(this ITurnContext context, string text)
     {
         if (context.IsNotTelegramChannel())
         {
             return MessageFactory.Text(text);
         }
 
-        var telegramActivity = MessageFactory.Text(default);
-        telegramActivity.ChannelData = BuildTelegramChannelData(text).ToJObject();
+        var channelData = new TelegramChannelData(
+            parameters: new(text)
+            {
+                ParseMode = TelegramParseMode.Html
+            });
 
-        return telegramActivity;
-
-        static TelegramChannelData BuildTelegramChannelData(string text)
-            =>
-            new(
-                parameters: new(text)
-                {
-                    ParseMode = TelegramParseMode.Html
-                });
+        return channelData.CreateActivity();
     }
 }

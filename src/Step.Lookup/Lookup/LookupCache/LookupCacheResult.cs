@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.Bot.Schema;
@@ -7,11 +6,9 @@ namespace GarageGroup.Infra.Bot.Builder;
 
 internal sealed record class LookupCacheResult
 {
-    public LookupCacheResult(
-        [AllowNull] IReadOnlyCollection<ResourceResponse> resources,
-        LookupValue value)
+    public LookupCacheResult([AllowNull] IReadOnlyCollection<ResourceResponse> resources, LookupValue value)
     {
-        Resources = resources ?? Array.Empty<ResourceResponse>();
+        Resources = resources ?? [];
         Value = value;
     }
 

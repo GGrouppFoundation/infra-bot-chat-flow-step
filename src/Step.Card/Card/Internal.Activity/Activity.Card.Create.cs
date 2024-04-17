@@ -9,27 +9,22 @@ namespace GarageGroup.Infra.Bot.Builder;
 
 partial class CardActivity
 {
-    internal static IActivity CreateConfirmationActivity(
-        this ITurnContext context, ConfirmationCardOption option, ConfirmationCardCacheJson cache, bool useButtons = true)
+    internal static IActivity CreateCardActivity(this ITurnContext context, EntityCardOption option, CardButtonsOption? buttons = null)
     {
         if (context.IsCardSupported())
         {
-            return context.CreateAdaptiveCardActivity(option, cache, useButtons);
+            return context.CreateAdaptiveCardActivity(option, buttons);
         }
 
         if (context.IsTelegramChannel())
         {
-            var telegramActivity = MessageFactory.Text(default);
-            telegramActivity.ChannelData = CreateTelegramChannelData(option, useButtons).ToJObject();
-
-            return telegramActivity;
+            return CreateTelegramChannelData(option, buttons).CreateActivity();
         }
 
-        return context.CreateHeroCardConfirmationActivity(option, cache, useButtons);
+        return CreateHeroCardConfirmationActivity(option, buttons);
     }
 
-    private static IActivity CreateAdaptiveCardActivity(
-        this ITurnContext context, ConfirmationCardOption option, ConfirmationCardCacheJson cache, bool useButtons)
+    private static IActivity CreateAdaptiveCardActivity(this ITurnContext context, EntityCardOption option, CardButtonsOption? buttons)
         =>
         new Attachment
         {
@@ -40,7 +35,7 @@ partial class CardActivity
                 {
                     new AdaptiveTextBlock
                     {
-                        Text = option.QuestionText,
+                        Text = option.HeaderText,
                         Weight = AdaptiveTextWeight.Bolder,
                         Size = AdaptiveTextSize.Medium
                     },
@@ -51,43 +46,42 @@ partial class CardActivity
                 }
                 .AddElements(
                     option.FieldValues.AsEnumerable().Where(NotEmptyField).Where(EmptyFieldName).Select(CreateTextBlock)),
-                Actions = useButtons ? context.CreateAdaptiveCardActivityActions(option, cache) : null
+                Actions = buttons is null ? null : CreateAdaptiveCardActivityActions(buttons)
             }
         }
         .ToActivity();
 
-    private static List<AdaptiveAction> CreateAdaptiveCardActivityActions(
-        this ITurnContext context, ConfirmationCardOption option, ConfirmationCardCacheJson cache)
+    private static List<AdaptiveAction> CreateAdaptiveCardActivityActions(CardButtonsOption option)
         =>
         [
             new AdaptiveSubmitAction
             {
                 Title = option.ConfirmButtonText,
-                Data = context.BuildCardActionValue(cache.ConfirmButtonGuid)
+                Data = option.ConfirmButtonText
             },
             new AdaptiveSubmitAction
             {
                 Title = option.CancelButtonText,
-                Data = context.BuildCardActionValue(cache.CancelButtonGuid)
+                Data = option.CancelButtonText
             }
         ];
 
-    private static TelegramChannelData CreateTelegramChannelData(ConfirmationCardOption option, bool useButtons)
+    private static TelegramChannelData CreateTelegramChannelData(EntityCardOption option, CardButtonsOption? buttons)
     {
         return new(
             parameters: new(option.BuildTelegramText())
             {
                 ParseMode = TelegramParseMode.Html,
-                ReplyMarkup = useButtons is false ? null : new TelegramReplyKeyboardMarkup(
-                    keyboard: InnerGetButtons(option).ToArray())
+                ReplyMarkup = buttons is null ? null : new TelegramReplyKeyboardMarkup(
+                    keyboard: InnerGetButtons(buttons).ToArray())
                 {
                     ResizeKeyboard = true,
                     OneTimeKeyboard = true,
-                    InputFieldPlaceholder = option.QuestionText
+                    InputFieldPlaceholder = option.HeaderText
                 }
             });
 
-        static IEnumerable<TelegramKeyboardButton[]> InnerGetButtons(ConfirmationCardOption option)
+        static IEnumerable<TelegramKeyboardButton[]> InnerGetButtons(CardButtonsOption option)
         {
             yield return
             [
@@ -110,32 +104,30 @@ partial class CardActivity
         }
     }
 
-    private static IActivity CreateHeroCardConfirmationActivity(
-        this ITurnContext context, ConfirmationCardOption option, ConfirmationCardCacheJson cache, bool useButtons)
+    private static IActivity CreateHeroCardConfirmationActivity(EntityCardOption option, CardButtonsOption? buttons)
         =>
         new HeroCard
         {
-            Title = option.QuestionText,
-            Buttons = useButtons ? context.CreateHeroCardConfirmationButtons(option, cache) : null
+            Title = option.HeaderText,
+            Buttons = buttons is null ? null : CreateHeroCardConfirmationButtons(buttons)
         }
         .ToCardActivity(
             new StringBuilder().AppendFields(option.FieldValues.AsEnumerable(), false).ToString());
 
-    private static IList<CardAction> CreateHeroCardConfirmationButtons(
-        this ITurnContext context, ConfirmationCardOption option, ConfirmationCardCacheJson cache)
+    private static IList<CardAction> CreateHeroCardConfirmationButtons(CardButtonsOption option)
         =>
         [
             new(ActionTypes.PostBack)
             {
                 Title = option.ConfirmButtonText,
                 Text = option.ConfirmButtonText,
-                Value = context.BuildCardActionValue(cache.ConfirmButtonGuid)
+                Value = option.ConfirmButtonText
             },
             new(ActionTypes.PostBack)
             {
                 Title = option.CancelButtonText,
                 Text = option.CancelButtonText,
-                Value = context.BuildCardActionValue(cache.CancelButtonGuid)
+                Value = option.CancelButtonText
             }
         ];
 
