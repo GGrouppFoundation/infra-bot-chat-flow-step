@@ -6,7 +6,7 @@ namespace GarageGroup.Infra.Bot.Builder;
 
 partial class CardActivity
 {
-    internal static IActivity CreateCancellationActivity(this ITurnContext context, string text)
+    internal static Activity CreateCancellationActivity(this ITurnContext context, string text)
     {
         if (context.IsNotTelegramChannel())
         {
@@ -20,9 +20,6 @@ partial class CardActivity
                 ReplyMarkup = new TelegramReplyKeyboardRemove()
             });
 
-        var activity = MessageFactory.Text(default);
-        activity.ChannelData = channelData.ToJObject();
-
-        return activity;
+        return channelData.CreateActivity();
     }
 }

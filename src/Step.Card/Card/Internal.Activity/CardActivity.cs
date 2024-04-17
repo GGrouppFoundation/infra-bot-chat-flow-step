@@ -3,21 +3,29 @@ using System.Linq;
 using System.Text;
 using System.Web;
 using AdaptiveCards;
+using Microsoft.Bot.Schema;
 
 namespace GarageGroup.Infra.Bot.Builder;
 
 internal static partial class CardActivity
 {
+    private static Activity CreateActivity(this TelegramChannelData channelData)
+        =>
+        new(ActivityTypes.Message)
+        {
+            ChannelData = channelData.ToJObject()
+        };
+
     private static List<AdaptiveElement> AddElements(this List<AdaptiveElement> body, IEnumerable<AdaptiveElement> elements)
     {
         body.AddRange(elements);
         return body;
     }
 
-    private static string BuildTelegramText(this ConfirmationCardOption option)
+    private static string BuildTelegramText(this EntityCardOption option)
         =>
         new StringBuilder(
-            $"<b>{HttpUtility.HtmlEncode(option.QuestionText)}</b>")
+            $"<b>{HttpUtility.HtmlEncode(option.HeaderText)}</b>")
         .AppendFields(
             option.FieldValues.AsEnumerable(), true)
         .ToString();

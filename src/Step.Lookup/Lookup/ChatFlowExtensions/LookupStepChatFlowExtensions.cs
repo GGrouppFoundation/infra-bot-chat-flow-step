@@ -38,7 +38,7 @@ public static partial class LookupStepChatFlowExtensions
             string.IsNullOrEmpty(resource?.Id) is false;
     }
 
-    private static IActivity CreateTextActivity(this ITurnContext turnContext, string resultMessage)
+    private static Activity CreateTextActivity(this ITurnContext turnContext, string resultMessage)
     {
         if (turnContext.IsNotTelegramChannel() || string.IsNullOrEmpty(resultMessage))
         {
@@ -59,7 +59,5 @@ public static partial class LookupStepChatFlowExtensions
 
     private static string CreateDefaultResultMessage<T>(IChatFlowContext<T> context, LookupValue lookupValue)
         =>
-        context.IsNotTelegramChannel()
-        ? $"Выбрано значение: **{lookupValue.Name}**"
-        : "Выбрано значение: <b>{lookupValue.Name}</b>";
+        context.IsNotTelegramChannel() ? $"Выбрано значение: **{lookupValue.Name}**" : $"Выбрано значение: <b>{lookupValue.Name}</b>";
 }

@@ -44,65 +44,41 @@ partial class CardChatFlowExtensions
         CancellationToken cancellationToken)
     {
         var option = optionFactory.Invoke(context);
-        if (option.SkipStep)
+        if (option.Entity.SkipStep)
         {
             return context.FlowState;
         }
 
         if (context.StepState is not ConfirmationCardCacheJson cacheJson)
         {
-            cacheJson = new()
-            {
-                ConfirmButtonGuid = Guid.NewGuid(),
-                CancelButtonGuid = Guid.NewGuid()
-            };
-
-            var activity = context.CreateConfirmationActivity(option, cacheJson);
+            var activity = context.CreateCardActivity(option.Entity, option.Buttons);
             var resource = await context.SendActivityAsync(activity, cancellationToken).ConfigureAwait(false);
 
-            if (context.IsMsteamsChannel())
+            cacheJson = new()
             {
-                cacheJson = cacheJson with
-                {
-                    Resource = resource
-                };
-            }
+                Resource = context.IsMsteamsChannel() ? resource : null
+            };
 
             return ChatFlowJump.Repeat<T>(cacheJson);
         }
 
-        if (IsTextEqualTo(option.ConfirmButtonText))
+        if (IsTextEqualTo(option.Buttons.ConfirmButtonText))
         {
             return await ToNextAsync(context.FlowState).ConfigureAwait(false);
         }
 
-        if (IsTextEqualTo(option.CancelButtonText))
+        if (IsTextEqualTo(option.Buttons.CancelButtonText))
         {
             return await ToBreakAsync().ConfigureAwait(false);
         }
 
-        if (forwardTelegramWebAppData is not null && string.IsNullOrWhiteSpace(option.TelegramWebApp?.WebAppUrl) is false)
+        if (forwardTelegramWebAppData is not null && string.IsNullOrWhiteSpace(option.Buttons.TelegramWebApp?.WebAppUrl) is false)
         {
             return await context.GetWebAppConfirmationResultOrRepeatAsync(
                 forwardTelegramWebAppData, ToNextAsync, cancellationToken).ConfigureAwait(false);
         }
 
-        return await context.GetCardActionValueOrAbsent().FoldValueAsync(CheckButtonIdAsync, context.RepeatSameStateValueTask).ConfigureAwait(false);
-
-        ValueTask<ChatFlowJump<T>> CheckButtonIdAsync(Guid buttonId)
-        {
-            if (buttonId == cacheJson.ConfirmButtonGuid)
-            {
-                return ToNextAsync(context.FlowState);
-            }
-
-            if (buttonId == cacheJson.CancelButtonGuid)
-            {
-                return ToBreakAsync();
-            }
-
-            return context.RepeatSameStateValueTask();
-        }
+        return context.RepeatSameStateJump();
 
         async ValueTask<ChatFlowJump<T>> ToNextAsync(T value)
         {
@@ -130,18 +106,18 @@ partial class CardChatFlowExtensions
 
         Task SendCancellationTextAsync()
         {
-            var cancellationActivity = context.CreateCancellationActivity(option.CancelText);
+            var cancellationActivity = context.CreateCancellationActivity(option.Buttons.CancelText);
             return context.SendActivityAsync(cancellationActivity, cancellationToken);
         }
 
         Task UpdateResourceAsync(ResourceResponse resource)
         {
-            var activity = context.CreateConfirmationActivity(option, cacheJson, false);
+            var activity = context.CreateCardActivity(option.Entity, null);
             return context.ReplaceActivityAsync(resource.Id, activity, cancellationToken);
         }
 
         bool IsTextEqualTo(string buttonText)
             =>
-            string.Equals(context?.Activity?.Text, buttonText, StringComparison.InvariantCultureIgnoreCase);
+            string.Equals(context.GetActivityText(), buttonText, StringComparison.InvariantCultureIgnoreCase);
     }
 }

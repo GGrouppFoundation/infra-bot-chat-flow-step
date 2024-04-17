@@ -100,7 +100,7 @@ partial class LookupStepChatFlowExtensions
             var successActivity = context.CreateLookupActivity(option);
             var resource = await context.SendActivityAsync(successActivity, token).ConfigureAwait(false);
 
-            return context.ToRepeatWithLookupCacheJump<T>(resource, option);
+            return context.ToRepeatWithLookupCacheJump(resource, option);
         }
 
         async ValueTask<ChatFlowJump<T>> InnerSendFailureActivityAsync(BotFlowFailure searchFailure)

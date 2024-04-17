@@ -7,8 +7,8 @@
     <InvariantGlobalization>true</InvariantGlobalization>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <RootNamespace>GarageGroup.Infra.Bot.Builder</RootNamespace>
-    <AssemblyName>GarageGroup.Infra.Bot.Builder.ChatFlow.Step.Card</AssemblyName>
-    <Version>0.4.0</Version>
+    <AssemblyName>GarageGroup.Infra.Bot.Builder.ChatFlow.Step.Choice</AssemblyName>
+    <Version>0.0.1-preview.1</Version>
   </PropertyGroup>
 
   <ItemGroup>
@@ -17,6 +17,7 @@
     <PackageReference Include="GarageGroup.Infra.Bot.Builder.FlowFailure" Version="0.1.1" />
     <PackageReference Include="GarageGroup.Infra.Bot.Builder.Telegram.ChannelData" Version="0.2.0" />
     <PackageReference Include="GarageGroup.Infra.Bot.Builder.TurnContext.Extensions" Version="2.0.0" />
+    <PackageReference Include="PrimeFuncPack.Core.FlatArray" Version="1.4.0" />
     <PackageReference Include="PrimeFuncPack.Primitives.Strings" Version="2.0.3" />
   </ItemGroup>
 

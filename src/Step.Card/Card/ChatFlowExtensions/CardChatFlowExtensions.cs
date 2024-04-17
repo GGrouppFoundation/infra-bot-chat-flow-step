@@ -2,12 +2,17 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Bot.Builder;
 using Microsoft.Extensions.Logging;
 
 namespace GarageGroup.Infra.Bot.Builder;
 
 public static partial class CardChatFlowExtensions
 {
+    private static string? GetActivityText(this ITurnContext context)
+        =>
+        context.Activity?.Value?.ToString() ?? context.Activity?.Text;
+
     private static async ValueTask<ChatFlowJump<T>> GetWebAppConfirmationResultOrRepeatAsync<T>(
         this IChatFlowContext<T> context,
         Func<IChatFlowContext<T>, string, Result<T, BotFlowFailure>> forwardFlowState,
