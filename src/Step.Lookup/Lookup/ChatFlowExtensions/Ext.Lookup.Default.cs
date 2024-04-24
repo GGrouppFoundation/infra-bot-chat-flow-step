@@ -15,26 +15,29 @@ partial class LookupStepChatFlowExtensions
         LookupValueSetSearchFunc<T> searchFunc,
         Func<IChatFlowContext<T>, LookupValue, string> resultMessageFactory,
         Func<T, LookupValue, T> mapFlowState)
-        =>
-        InnerAwaitLookupValue(
-            chatFlow ?? throw new ArgumentNullException(nameof(chatFlow)),
-            defaultItemsFunc ?? throw new ArgumentNullException(nameof(defaultItemsFunc)),
-            searchFunc ?? throw new ArgumentNullException(nameof(searchFunc)),
-            resultMessageFactory ?? throw new ArgumentNullException(nameof(resultMessageFactory)),
-            mapFlowState ?? throw new ArgumentNullException(nameof(mapFlowState)));
+    {
+        ArgumentNullException.ThrowIfNull(chatFlow);
+        ArgumentNullException.ThrowIfNull(defaultItemsFunc);
+        ArgumentNullException.ThrowIfNull(searchFunc);
+        ArgumentNullException.ThrowIfNull(resultMessageFactory);
+        ArgumentNullException.ThrowIfNull(mapFlowState);
+
+        return InnerAwaitLookupValue(chatFlow, defaultItemsFunc, searchFunc, resultMessageFactory, mapFlowState);
+    }
 
     public static ChatFlow<T> AwaitLookupValue<T>(
         this ChatFlow<T> chatFlow,
         LookupValueSetDefaultFunc<T> defaultItemsFunc,
         LookupValueSetSearchFunc<T> searchFunc,
         Func<T, LookupValue, T> mapFlowState)
-        =>
-        InnerAwaitLookupValue(
-            chatFlow ?? throw new ArgumentNullException(nameof(chatFlow)),
-            defaultItemsFunc ?? throw new ArgumentNullException(nameof(defaultItemsFunc)),
-            searchFunc ?? throw new ArgumentNullException(nameof(searchFunc)),
-            CreateDefaultResultMessage,
-            mapFlowState ?? throw new ArgumentNullException(nameof(mapFlowState)));
+    {
+        ArgumentNullException.ThrowIfNull(chatFlow);
+        ArgumentNullException.ThrowIfNull(defaultItemsFunc);
+        ArgumentNullException.ThrowIfNull(searchFunc);
+        ArgumentNullException.ThrowIfNull(mapFlowState);
+
+        return InnerAwaitLookupValue(chatFlow, defaultItemsFunc, searchFunc, CreateDefaultResultMessage, mapFlowState);
+    }
 
     private static ChatFlow<T> InnerAwaitLookupValue<T>(
         ChatFlow<T> chatFlow,
@@ -42,9 +45,13 @@ partial class LookupStepChatFlowExtensions
         LookupValueSetSearchFunc<T> searchFunc,
         Func<IChatFlowContext<T>, LookupValue, string> resultMessageFactory,
         Func<T, LookupValue, T> mapFlowState)
-        =>
-        chatFlow.ForwardValue(
-            (context, token) => context.GetChoosenValueOrRepeatAsync(defaultItemsFunc, searchFunc, resultMessageFactory, mapFlowState, token));
+    {
+        return chatFlow.ForwardValue(InnerNextAsync);
+
+        ValueTask<ChatFlowJump<T>> InnerNextAsync(IChatFlowContext<T> context, CancellationToken cancellationToken)
+            =>
+            context.GetChoosenValueOrRepeatAsync(defaultItemsFunc, searchFunc, resultMessageFactory, mapFlowState, cancellationToken);
+    }
 
     private static async ValueTask<ChatFlowJump<T>> GetChoosenValueOrRepeatAsync<T>(
         this IChatFlowContext<T> context,

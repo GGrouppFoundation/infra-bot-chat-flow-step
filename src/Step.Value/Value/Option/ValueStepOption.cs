@@ -6,7 +6,7 @@ namespace GarageGroup.Infra.Bot.Builder;
 
 public sealed record class ValueStepOption<TValue>
 {
-    private const string DefaultMessageText = "Введите значение";
+    private const string DefaultMessageText = "Enter a value";
 
     private readonly string? messageText;
 

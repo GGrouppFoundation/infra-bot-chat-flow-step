@@ -5,7 +5,7 @@ namespace GarageGroup.Infra.Bot.Builder;
 
 public sealed record class ChoiceSetOption
 {
-    private const string DefaultChoiceText = "Выберите значение";
+    private const string DefaultChoiceText = "Select an item";
 
     public ChoiceSetOption([AllowNull] string choiceText = DefaultChoiceText)
         =>

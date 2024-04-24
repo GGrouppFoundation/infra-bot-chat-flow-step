@@ -4,7 +4,6 @@ using System.Linq;
 using AdaptiveCards;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Schema;
-using Newtonsoft.Json.Linq;
 
 namespace GarageGroup.Infra.Bot.Builder;
 
@@ -14,10 +13,7 @@ partial class SuggestionsActivity
     {
         if (context.IsTelegramChannel())
         {
-            var telegramActivity = MessageFactory.Text(default);
-            telegramActivity.ChannelData = InnerCreateTelegramChannelData(messageText, suggestions);
-
-            return telegramActivity;
+            return InnerCreateTelegramParameters(messageText, suggestions).BuildActivity();
         }
 
         if (context.IsNotMsteamsChannel() || suggestions.SelectMany(Pipeline.Pipe).Any() is false)
@@ -25,78 +21,67 @@ partial class SuggestionsActivity
             return MessageFactory.Text(messageText);
         }
 
-        return context.InnerCreateAdaptiveCardActivity(messageText, suggestions);
+        return context.InnerCreateAdaptiveCard(messageText, suggestions).ToActivity();
     }
 
-    private static IActivity InnerCreateAdaptiveCardActivity(
+    private static Attachment InnerCreateAdaptiveCard(
         this ITurnContext context, string messageText, KeyValuePair<Guid, string>[][] suggestions)
-        =>
-        new Attachment
+    {
+        var body = new List<AdaptiveElement>()
+        {
+            new AdaptiveTextBlock
+            {
+                Text = messageText,
+                Wrap = true
+            }
+        };
+
+        body.AddRange(suggestions.Select(CreateAdaptiveActionSet));
+
+        return new()
         {
             ContentType = AdaptiveCard.ContentType,
-            Content = new AdaptiveCard(context.GetAdaptiveSchemaVersion())
+            Content = new AdaptiveCard(context.IsMsteamsChannel() ? AdaptiveCard.KnownSchemaVersion : new(1, 0))
             {
-                Body = new List<AdaptiveElement>()
-                {
-                    new AdaptiveTextBlock
-                    {
-                        Text = messageText,
-                        Wrap = true
-                    }
-                }
-                .AddActionSets(
-                    suggestions.Select(context.CreateAdaptiveActionSet))
+                Body = body
             }
-        }
-        .ToActivity();
+        };
 
-    private static JObject InnerCreateTelegramChannelData(string messageText, KeyValuePair<Guid, string>[][] suggestions)
-        =>
-        new TelegramChannelData(
-            parameters: new(messageText)
+        AdaptiveActionSet CreateAdaptiveActionSet(KeyValuePair<Guid, string>[] suggestions)
+            =>
+            new()
             {
-                ParseMode = TelegramParseMode.Html,
-                ReplyMarkup = new TelegramReplyKeyboardMarkup(
-                    keyboard: suggestions.Select(CreateRow).ToArray())
-                {
-                    ResizeKeyboard = true,
-                    OneTimeKeyboard = true,
-                    InputFieldPlaceholder = messageText
-                }
-            })
-        .ToJObject();
+                Actions = suggestions.Select(CreateAdaptiveAction).ToList()
+            };
 
-    private static List<AdaptiveElement> AddActionSets(this List<AdaptiveElement> list, IEnumerable<AdaptiveActionSet> sets)
-    {
-        list.AddRange(sets);
-        return list;
+        AdaptiveAction CreateAdaptiveAction(KeyValuePair<Guid, string> suggestion)
+            =>
+            new AdaptiveSubmitAction
+            {
+                Title = suggestion.Value,
+                Data = context.BuildCardActionValue(suggestion.Key)
+            };
     }
 
-    private static AdaptiveActionSet CreateAdaptiveActionSet(
-        this ITurnContext turnContext, KeyValuePair<Guid, string>[] suggestions)
-        =>
-        new()
+    private static TelegramParameters InnerCreateTelegramParameters(string messageText, KeyValuePair<Guid, string>[][] suggestions)
+    {
+        return new(messageText)
         {
-            Actions = suggestions.Select(turnContext.CreateAdaptiveAction).ToList()
+            ParseMode = TelegramParseMode.Html,
+            ReplyMarkup = new TelegramReplyKeyboardMarkup(
+                keyboard: suggestions.Select(CreateRow).ToArray())
+            {
+                ResizeKeyboard = true,
+                OneTimeKeyboard = true
+            }
         };
 
-    private static AdaptiveAction CreateAdaptiveAction(this ITurnContext turnContext, KeyValuePair<Guid, string> suggestion)
-        =>
-        new AdaptiveSubmitAction
-        {
-            Title = suggestion.Value,
-            Data = turnContext.BuildCardActionValue(suggestion.Key)
-        };
+        static TelegramKeyboardButton[] CreateRow(KeyValuePair<Guid, string>[] suggestionsRow)
+            =>
+            suggestionsRow.Select(CreateTelegramKeyboardButton).ToArray();
 
-    private static TelegramKeyboardButton[] CreateRow(KeyValuePair<Guid, string>[] suggestionsRow)
-        =>
-        suggestionsRow.Select(CreateTelegramKeyboardButton).ToArray();
-
-    private static TelegramKeyboardButton CreateTelegramKeyboardButton(KeyValuePair<Guid, string> suggestion)
-        =>
-        new(suggestion.Value);
-
-    private static AdaptiveSchemaVersion GetAdaptiveSchemaVersion(this ITurnContext turnContext)
-        =>
-        turnContext.IsMsteamsChannel() ? AdaptiveCard.KnownSchemaVersion : new(1, 0);
+        static TelegramKeyboardButton CreateTelegramKeyboardButton(KeyValuePair<Guid, string> suggestion)
+            =>
+            new(suggestion.Value);
+    }
 }

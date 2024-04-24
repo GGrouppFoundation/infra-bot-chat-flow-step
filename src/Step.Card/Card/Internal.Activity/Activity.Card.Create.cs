@@ -18,7 +18,7 @@ partial class CardActivity
 
         if (context.IsTelegramChannel())
         {
-            return CreateTelegramChannelData(option, buttons).CreateActivity();
+            return CreateTelegramParameters(option, buttons).BuildActivity();
         }
 
         return CreateHeroCardConfirmationActivity(option, buttons);
@@ -66,20 +66,18 @@ partial class CardActivity
             }
         ];
 
-    private static TelegramChannelData CreateTelegramChannelData(EntityCardOption option, CardButtonsOption? buttons)
+    private static TelegramParameters CreateTelegramParameters(EntityCardOption option, CardButtonsOption? buttons)
     {
-        return new(
-            parameters: new(option.BuildTelegramText())
+        return new(option.BuildTelegramText())
+        {
+            ParseMode = TelegramParseMode.Html,
+            ReplyMarkup = buttons is null ? new TelegramReplyKeyboardRemove() : new TelegramReplyKeyboardMarkup(
+                keyboard: InnerGetButtons(buttons).ToArray())
             {
-                ParseMode = TelegramParseMode.Html,
-                ReplyMarkup = buttons is null ? new TelegramReplyKeyboardRemove() : new TelegramReplyKeyboardMarkup(
-                    keyboard: InnerGetButtons(buttons).ToArray())
-                {
-                    ResizeKeyboard = true,
-                    OneTimeKeyboard = true,
-                    InputFieldPlaceholder = option.HeaderText
-                }
-            });
+                ResizeKeyboard = true,
+                OneTimeKeyboard = true
+            }
+        };
 
         static IEnumerable<TelegramKeyboardButton[]> InnerGetButtons(CardButtonsOption option)
         {

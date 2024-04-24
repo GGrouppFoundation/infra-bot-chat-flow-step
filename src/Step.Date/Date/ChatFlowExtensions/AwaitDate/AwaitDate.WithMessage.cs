@@ -20,34 +20,29 @@ partial class AwaitDateChatFlowExtensions
 
     private static Activity CreateMessageActivity(ITurnContext context, DateStepOption option)
     {
-        var replyActivity = MessageFactory.Text(option.Text);
-
         if (option.Suggestions.SelectMany(PipeSelf).Any() is false || context.IsNotTelegramChannel())
         {
-            return replyActivity;
+            return MessageFactory.Text(option.Text);
         }
 
-        replyActivity.ChannelData = new TelegramChannelData(
-            parameters: new()
+        var telegramParameters = new TelegramParameters(option.Text)
+        {
+            ReplyMarkup = new TelegramReplyKeyboardMarkup(
+                keyboard: option.Suggestions.Select(ToTelegramKeyboardButtonRow).ToArray())
             {
-                ReplyMarkup = new TelegramReplyKeyboardMarkup(
-                    keyboard: option.Suggestions.Select(ToTelegramKeyboardButtonRow).ToArray())
-                {
-                    ResizeKeyboard = true,
-                    OneTimeKeyboard = true,
-                    InputFieldPlaceholder = option.Placeholder
-                }
-            })
-        .ToJObject();
+                ResizeKeyboard = true,
+                OneTimeKeyboard = true
+            }
+        };
 
-        return replyActivity;
+        return telegramParameters.BuildActivity();
+
+        static TelegramKeyboardButton[] ToTelegramKeyboardButtonRow(IReadOnlyCollection<KeyValuePair<string, DateOnly>> row)
+            =>
+            row.Select(ToTelegramKeyboardButton).ToArray();
+
+        static TelegramKeyboardButton ToTelegramKeyboardButton(KeyValuePair<string, DateOnly> suggesion)
+            =>
+            new(suggesion.Key);
     }
-
-    private static TelegramKeyboardButton[] ToTelegramKeyboardButtonRow(IReadOnlyCollection<KeyValuePair<string, DateOnly>> row)
-        =>
-        row.Select(ToTelegramKeyboardButton).ToArray();
-
-    private static TelegramKeyboardButton ToTelegramKeyboardButton(KeyValuePair<string, DateOnly> suggesion)
-        =>
-        new(suggesion.Key);
 }

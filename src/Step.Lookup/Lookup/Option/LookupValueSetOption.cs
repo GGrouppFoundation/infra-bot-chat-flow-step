@@ -5,7 +5,7 @@ namespace GarageGroup.Infra.Bot.Builder;
 
 public sealed record class LookupValueSetOption
 {
-    private const string DefaultChoiceText = "Выберите значение";
+    private const string DefaultChoiceText = "Select item";
 
     public LookupValueSetOption(
         FlatArray<LookupValue> items,

@@ -6,7 +6,7 @@ namespace GarageGroup.Infra.Bot.Builder;
 
 public sealed record class EntityCardOption
 {
-    private const string DefaultHeaderText = "Данные операции";
+    private const string DefaultHeaderText = "Operation data";
 
     public EntityCardOption(
         [AllowNull] string headerText = DefaultHeaderText,

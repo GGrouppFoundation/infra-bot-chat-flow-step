@@ -4,7 +4,7 @@ namespace GarageGroup.Infra.Bot.Builder;
 
 public sealed record class CardTelegramWebAppOption
 {
-    private const string DefaultButtonName = "Редактировать";
+    private const string DefaultButtonName = "Edit";
 
     public CardTelegramWebAppOption(string webAppUrl, string buttonName = DefaultButtonName)
     {
