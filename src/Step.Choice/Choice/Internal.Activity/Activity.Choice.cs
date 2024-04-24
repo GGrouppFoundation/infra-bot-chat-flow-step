@@ -14,7 +14,7 @@ partial class ChoiceActivity
     {
         if (context.IsTelegramChannel())
         {
-            return context.CreateTelegramChannelData(option).Select(InnerCreateTelegramActivity).ToArray();
+            return context.CreateTelegramParameters(option).Select(TelegramTurnContextExtensions.BuildActivity).ToArray();
         }
 
         if (context.IsCardSupported())
@@ -107,18 +107,17 @@ partial class ChoiceActivity
             };
     }
 
-    private static IEnumerable<TelegramChannelData> CreateTelegramChannelData<T>(this IChatFlowStepContext<T> context, ChoiceSetOption option)
+    private static IEnumerable<TelegramParameters> CreateTelegramParameters<T>(this IChatFlowStepContext<T> context, ChoiceSetOption option)
     {
         var encodedText = HttpUtility.HtmlEncode(option.ChoiceText);
         var buttons = option.Items.AsEnumerable().Select(CreateTelegramButton);
 
-        yield return new(
-            parameters: new(encodedText)
-            {
-                ParseMode = TelegramParseMode.Html,
-                ReplyMarkup = new TelegramInlineKeyboardMarkup(
-                    keyboard: buttons.Select(CreateRow).ToArray())
-            });
+        yield return new(encodedText)
+        {
+            ParseMode = TelegramParseMode.Html,
+            ReplyMarkup = new TelegramInlineKeyboardMarkup(
+                keyboard: buttons.Select(CreateRow).ToArray())
+        };
 
         var stepState = context.StepState as ChoiceStepStateJson;
 
@@ -130,11 +129,10 @@ partial class ChoiceActivity
             yield break;
         }
 
-        yield return new(
-            parameters: new(TelegramEmptyText)
-            {
-                ReplyMarkup = hasNextButton ? CreateKeyboardMarkup(option.NextButton?.Title) : new TelegramReplyKeyboardRemove()
-            });
+        yield return new(default)
+        {
+            ReplyMarkup = hasNextButton ? CreateKeyboardMarkup(option.NextButton?.Title) : new TelegramReplyKeyboardRemove()
+        };
 
         static TelegramReplyKeyboardMarkup CreateKeyboardMarkup(string? nextButtonTitle)
             =>

@@ -3,19 +3,11 @@ using System.Linq;
 using System.Text;
 using System.Web;
 using AdaptiveCards;
-using Microsoft.Bot.Schema;
 
 namespace GarageGroup.Infra.Bot.Builder;
 
 internal static partial class CardActivity
 {
-    private static Activity CreateActivity(this TelegramChannelData channelData)
-        =>
-        new(ActivityTypes.Message)
-        {
-            ChannelData = channelData.ToJObject()
-        };
-
     private static List<AdaptiveElement> AddElements(this List<AdaptiveElement> body, IEnumerable<AdaptiveElement> elements)
     {
         body.AddRange(elements);

@@ -5,11 +5,11 @@ namespace GarageGroup.Infra.Bot.Builder;
 
 public sealed record class CardButtonsOption
 {
-    private const string DefaultConfirmButtonText = "Подтвердить";
+    private const string DefaultConfirmButtonText = "Confirm";
 
-    private const string DefaultCancelButtonText = "Отменить";
+    private const string DefaultCancelButtonText = "Cancel";
 
-    private const string DefaultCancelText = "Операция отменена";
+    private const string DefaultCancelText = "Operation was canceled";
 
     public CardButtonsOption(
         [AllowNull] string confirmButtonText = DefaultConfirmButtonText,

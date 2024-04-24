@@ -12,12 +12,11 @@ partial class CardActivity
             return MessageFactory.Text(text);
         }
 
-        var channelData = new TelegramChannelData(
-            parameters: new(text)
-            {
-                ParseMode = TelegramParseMode.Html
-            });
+        var telegramParameters = new TelegramParameters(text)
+        {
+            ParseMode = TelegramParseMode.Html
+        };
 
-        return channelData.CreateActivity();
+        return telegramParameters.BuildActivity();
     }
 }

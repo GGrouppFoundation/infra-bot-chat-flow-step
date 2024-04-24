@@ -16,38 +16,47 @@ partial class AwaitDateChatFlowExtensions
         Func<IChatFlowContext<T>, DateOnly, string> resultMessageFactory,
         Func<IChatFlowContext<T>, DateOnly, Result<DateOnly, BotFlowFailure>> validator,
         Func<T, DateOnly, T> mapFlowState)
-        =>
-        InnerAwaitDate(
-            chatFlow ?? throw new ArgumentNullException(nameof(chatFlow)),
-            optionFactory ?? throw new ArgumentNullException(nameof(chatFlow)),
-            resultMessageFactory ?? throw new ArgumentNullException(nameof(resultMessageFactory)),
-            validator ?? throw new ArgumentNullException(nameof(validator)),
-            mapFlowState ?? throw new ArgumentNullException(nameof(mapFlowState)));
+    {
+        ArgumentNullException.ThrowIfNull(chatFlow);
+        ArgumentNullException.ThrowIfNull(optionFactory);
+        ArgumentNullException.ThrowIfNull(resultMessageFactory);
+        ArgumentNullException.ThrowIfNull(validator);
+        ArgumentNullException.ThrowIfNull(mapFlowState);
+
+        return InnerAwaitDate(chatFlow, optionFactory, resultMessageFactory, validator, mapFlowState);
+    }
 
     public static ChatFlow<T> AwaitDate<T>(
         this ChatFlow<T> chatFlow,
         Func<IChatFlowContext<T>, DateStepOption> optionFactory,
         Func<IChatFlowContext<T>, DateOnly, string> resultMessageFactory,
         Func<T, DateOnly, T> mapFlowState)
-        =>
-        InnerAwaitDate(
-            chatFlow ?? throw new ArgumentNullException(nameof(chatFlow)),
-            optionFactory ?? throw new ArgumentNullException(nameof(chatFlow)),
-            resultMessageFactory ?? throw new ArgumentNullException(nameof(resultMessageFactory)),
-            null,
-            mapFlowState ?? throw new ArgumentNullException(nameof(mapFlowState)));
+    {
+        ArgumentNullException.ThrowIfNull(chatFlow);
+        ArgumentNullException.ThrowIfNull(optionFactory);
+        ArgumentNullException.ThrowIfNull(resultMessageFactory);
+        ArgumentNullException.ThrowIfNull(mapFlowState);
+
+        return InnerAwaitDate(chatFlow, optionFactory, resultMessageFactory, null, mapFlowState);
+    }
 
     public static ChatFlow<T> AwaitDate<T>(
         this ChatFlow<T> chatFlow,
         Func<IChatFlowContext<T>, DateStepOption> optionFactory,
         Func<T, DateOnly, T> mapFlowState)
-        =>
-        InnerAwaitDate(
-            chatFlow ?? throw new ArgumentNullException(nameof(chatFlow)),
-            optionFactory ?? throw new ArgumentNullException(nameof(chatFlow)),
-            CreateDefaultResultMessage,
-            null,
-            mapFlowState ?? throw new ArgumentNullException(nameof(mapFlowState)));
+    {
+        ArgumentNullException.ThrowIfNull(chatFlow);
+        ArgumentNullException.ThrowIfNull(optionFactory);
+        ArgumentNullException.ThrowIfNull(mapFlowState);
+
+        return InnerAwaitDate(chatFlow, optionFactory, CreateDefaultResultMessage, null, mapFlowState);
+
+        static string CreateDefaultResultMessage(IChatFlowContext<T> context, DateOnly date)
+        {
+            var text = context.EncodeTextWithStyle(date.ToString("dd.MM.yyyy"), BotTextStyle.Bold);
+            return $"Value selected: {text}";
+        }
+    }
 
     private static ChatFlow<T> InnerAwaitDate<T>(
         ChatFlow<T> chatFlow,
@@ -166,12 +175,6 @@ partial class AwaitDateChatFlowExtensions
             context.DeleteActivityAsync(activityId, token);
     }
 
-    private static string CreateDefaultResultMessage<T>(IChatFlowContext<T> context, DateOnly date)
-    {
-        var text = context.EncodeTextWithStyle(date.ToString("dd.MM.yyyy"), BotTextStyle.Bold);
-        return $"Выбрано значение: {text}";
-    }
-
     private static Activity CreateTextActivity(this ITurnContext context, string text)
     {
         if (context.IsNotTelegramChannel())
@@ -179,17 +182,13 @@ partial class AwaitDateChatFlowExtensions
             return MessageFactory.Text(text);
         }
 
-        var telegramActivity = MessageFactory.Text(default);
-        telegramActivity.ChannelData = BuildTelegramChannelData(text).ToJObject();
+        return BuildTelegramParameters(text).BuildActivity();
 
-        return telegramActivity;
-
-        static TelegramChannelData BuildTelegramChannelData(string text)
+        static TelegramParameters BuildTelegramParameters(string text)
             =>
-            new(
-                parameters: new(text)
-                {
+            new(text)
+            {
                     ParseMode = TelegramParseMode.Html
-                });
+            };
     }
 }

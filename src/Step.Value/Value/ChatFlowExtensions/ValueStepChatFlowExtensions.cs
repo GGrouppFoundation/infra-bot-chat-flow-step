@@ -137,7 +137,7 @@ public static partial class ValueStepChatFlowExtensions
     private static string CreateDefaultResultMessage<T, TValue>(IChatFlowContext<T> context, TValue value)
     {
         var text = context.EncodeTextWithStyle(value?.ToString(), BotTextStyle.Bold);
-        return $"Выбрано значение: {text}";
+        return $"Selected value: {text}";
     }
 
     private static T[]? OrNullIfEmpty<T>(this T[]? source)

@@ -13,13 +13,12 @@ partial class CardActivity
             return MessageFactory.Text(text);
         }
 
-        var channelData = new TelegramChannelData(
-            parameters: new(HttpUtility.HtmlEncode(text))
-            {
-                ParseMode = TelegramParseMode.Html,
-                ReplyMarkup = new TelegramReplyKeyboardRemove()
-            });
+        var telegramParameters = new TelegramParameters(HttpUtility.HtmlEncode(text))
+        {
+            ParseMode = TelegramParseMode.Html,
+            ReplyMarkup = new TelegramReplyKeyboardRemove()
+        };
 
-        return channelData.CreateActivity();
+        return telegramParameters.BuildActivity();
     }
 }

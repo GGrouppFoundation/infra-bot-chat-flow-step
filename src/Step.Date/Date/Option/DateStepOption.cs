@@ -6,9 +6,9 @@ namespace GarageGroup.Infra.Bot.Builder;
 
 public readonly record struct DateStepOption
 {
-    private const string DefaultText = "Введите дату";
+    private const string DefaultText = "Enter the date";
 
-    private const string DefaultConfirmButtonText = "Выбрать";
+    private const string DefaultConfirmButtonText = "Choose";
 
     private readonly string? text, confirmButtonText;
 
@@ -47,7 +47,7 @@ public readonly record struct DateStepOption
 
     public IReadOnlyCollection<IReadOnlyCollection<KeyValuePair<string, DateOnly>>> Suggestions
         =>
-        suggestions ?? Array.Empty<IReadOnlyCollection<KeyValuePair<string, DateOnly>>>();
+        suggestions ?? [];
 
     public bool SkipStep { get; init; }
 }

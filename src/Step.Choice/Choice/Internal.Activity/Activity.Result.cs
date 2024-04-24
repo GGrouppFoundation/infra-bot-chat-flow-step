@@ -12,13 +12,12 @@ partial class ChoiceActivity
             return MessageFactory.Text($"{name}: {context.EncodeTextWithStyle(value, BotTextStyle.Bold)}");
         }
 
-        var telegramChannelData = new TelegramChannelData(
-            parameters: new($"{name}: {context.EncodeHtmlTextWithStyle(value, BotTextStyle.Bold)}")
-            {
-                ParseMode = TelegramParseMode.Html,
-                ReplyMarkup = new TelegramReplyKeyboardRemove()
-            });
+        var telegramParameters = new TelegramParameters($"{name}: {context.EncodeHtmlTextWithStyle(value, BotTextStyle.Bold)}")
+        {
+            ParseMode = TelegramParseMode.Html,
+            ReplyMarkup = new TelegramReplyKeyboardRemove()
+        };
 
-        return telegramChannelData.InnerCreateTelegramActivity();
+        return telegramParameters.BuildActivity();
     }
 }

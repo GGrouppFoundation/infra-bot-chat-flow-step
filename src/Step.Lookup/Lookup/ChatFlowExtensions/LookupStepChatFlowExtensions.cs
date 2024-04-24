@@ -59,5 +59,5 @@ public static partial class LookupStepChatFlowExtensions
 
     private static string CreateDefaultResultMessage<T>(IChatFlowContext<T> context, LookupValue lookupValue)
         =>
-        context.IsNotTelegramChannel() ? $"Выбрано значение: **{lookupValue.Name}**" : $"Выбрано значение: <b>{lookupValue.Name}</b>";
+        context.IsNotTelegramChannel() ? $"Selected item: **{lookupValue.Name}**" : $"Selected item: <b>{lookupValue.Name}</b>";
 }

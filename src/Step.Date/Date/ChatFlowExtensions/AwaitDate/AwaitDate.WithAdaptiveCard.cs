@@ -47,15 +47,15 @@ partial class AwaitDateChatFlowExtensions
             ContentType = AdaptiveCard.ContentType,
             Content = new AdaptiveCard(context.GetAdaptiveSchemaVersion())
             {
-                Actions = new()
-                {
+                Actions =
+                [
                     new AdaptiveSubmitAction()
                     {
                         Title = option.ConfirmButtonText
                     }
-                },
-                Body = new()
-                {
+                ],
+                Body =
+                [
                     new AdaptiveTextBlock
                     {
                         Text = option.Text,
@@ -68,7 +68,7 @@ partial class AwaitDateChatFlowExtensions
                         Id = DateId,
                         Value = option.DefaultDate?.ToText(AdaptiveCardDateFormat)
                     }
-                }
+                ]
             }
         }
         .ToActivity();

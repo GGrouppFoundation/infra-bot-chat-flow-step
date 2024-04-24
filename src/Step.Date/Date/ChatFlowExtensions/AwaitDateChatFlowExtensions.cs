@@ -37,7 +37,7 @@ public static partial class AwaitDateChatFlowExtensions
 
     private static DateCacheJson BuildCacheValue(DateStepOption option, ResourceResponse? resource)
     {
-        return new DateCacheJson()
+        return new()
         {
             Resource = resource,
             InvalidDateText = option.InvalidDateText,
